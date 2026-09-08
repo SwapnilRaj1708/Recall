@@ -1,10 +1,10 @@
 package com.swapnil.recall
 
-import android.app.Activity
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -42,12 +42,14 @@ class WidgetActionActivity : AppCompatActivity() {
         // an extra, since both share one template.
         val request = when (intent.action) {
             ACTION_ADD -> INTENT_ADD
+            ACTION_SYNC -> INTENT_SYNC
             else -> intent.getStringExtra(EXTRA_INTENT) ?: INTENT_ADD
         }
 
         when (request) {
             INTENT_TOGGLE -> applyToggle()
             INTENT_EDIT -> promptEdit()
+            INTENT_SYNC -> openAppToSync()
             else -> promptAdd()
         }
     }
@@ -80,7 +82,7 @@ class WidgetActionActivity : AppCompatActivity() {
             // Dismissing any way at all has to finish the activity, or the
             // transparent shell stays on top of the home screen.
             .setOnDismissListener { finish() }
-            .show()
+            .showWithKeyboard(input)
     }
 
     private fun promptEdit() {
@@ -110,7 +112,52 @@ class WidgetActionActivity : AppCompatActivity() {
                 RecallWidgetProvider.refreshAll(this)
             }
             .setOnDismissListener { finish() }
-            .show()
+            .showWithKeyboard(input)
+    }
+
+    /**
+     * Show the dialog with the keyboard already up.
+     *
+     * The soft-input mode has to be set on the *dialog's* window, not the
+     * activity's — a dialog gets its own, and setting it on the activity
+     * produces the exact symptom of a focused-looking field with a blinking
+     * cursor that needs a second tap before the keyboard appears.
+     *
+     * The flag must also be set before the window is shown, so it is applied to
+     * the builder's dialog rather than after `show()`.
+     */
+    private fun AlertDialog.Builder.showWithKeyboard(input: EditText): AlertDialog {
+        val dialog = create()
+        dialog.window?.setSoftInputMode(
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE or
+                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+        )
+        dialog.show()
+        // Belt and braces: on some launchers the window flag alone is not
+        // enough once the activity is transparent, so ask outright too.
+        input.requestFocus()
+        input.post {
+            val manager = getSystemService(InputMethodManager::class.java)
+            manager?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
+        }
+        return dialog
+    }
+
+    /**
+     * Resync.
+     *
+     * The widget cannot talk to the server itself yet — that needs a native
+     * Supabase client with its own copy of the session — so this opens the app,
+     * which drains anything the widget queued, syncs, and refreshes the widget
+     * on its way out.
+     */
+    private fun openAppToSync() {
+        startActivity(
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+        )
+        finish()
     }
 
     /** An input that is already focused, with the keyboard already up. */
@@ -134,16 +181,10 @@ class WidgetActionActivity : AppCompatActivity() {
             addView(view)
         }
 
-    override fun onResume() {
-        super.onResume()
-        // Ask for the keyboard once the window is actually attached; requesting
-        // it during onCreate is too early and it silently does not appear.
-        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
-    }
-
     companion object {
         const val ACTION_ROW = "com.swapnil.recall.WIDGET_ROW"
         const val ACTION_ADD = "com.swapnil.recall.WIDGET_ADD"
+        const val ACTION_SYNC = "com.swapnil.recall.WIDGET_SYNC"
 
         const val EXTRA_TASK_ID = "task_id"
         const val EXTRA_TASK_TEXT = "task_text"
@@ -153,5 +194,6 @@ class WidgetActionActivity : AppCompatActivity() {
         const val INTENT_TOGGLE = "toggle"
         const val INTENT_EDIT = "edit"
         const val INTENT_ADD = "add"
+        const val INTENT_SYNC = "sync"
     }
 }

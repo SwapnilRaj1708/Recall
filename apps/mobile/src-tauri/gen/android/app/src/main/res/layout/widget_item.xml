@@ -2,13 +2,13 @@
 <!--
   One task row.
 
-  Two independent tap targets: the left box completes, the body opens the
-  editor. In a collection widget each child can carry its own fill-in intent,
-  which is what makes that possible without a separate button per row.
+  Two independent tap targets: the dot completes, the body opens the editor. In
+  a collection widget each child can carry its own fill-in intent, which is what
+  makes that possible without a separate button per row.
 
-  The toggle's target is deliberately wider than the icon it contains — 40dp is
-  the minimum comfortable touch target, and this is the control most likely to
-  be tapped without looking.
+  The dot's target is far wider than the dot itself — 40dp is the minimum
+  comfortable touch target, and this is the control most likely to be tapped
+  without looking.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -20,16 +20,16 @@
 
     <FrameLayout
         android:id="@+id/item_toggle"
-        android:layout_width="40dp"
+        android:layout_width="38dp"
         android:layout_height="match_parent"
         android:minHeight="40dp">
 
         <ImageView
-            android:id="@+id/item_check"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:id="@+id/item_dot"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_gravity="center"
-            android:src="@drawable/ic_widget_unchecked" />
+            android:src="@drawable/ic_widget_dot" />
     </FrameLayout>
 
     <TextView

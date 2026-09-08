@@ -4,6 +4,11 @@
     <color name="widget_surface">#D116161A</color>
     <color name="widget_text">#FFF2F2F5</color>
     <color name="widget_text_secondary">#FF9A9AA6</color>
+    <color name="widget_text_done">#8C9A9AA6</color>
     <color name="widget_accent">#FF8B8BEA</color>
+    <color name="widget_dot">#B88B8BEA</color>
+    <color name="widget_dot_done">#599A9AA6</color>
+    <color name="widget_control">#8C8B8BEA</color>
+    <color name="widget_divider">#1AFFFFFF</color>
     <color name="widget_ripple">#33FFFFFF</color>
 </resources>

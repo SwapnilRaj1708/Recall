@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Add. Deliberately quiet: it is always on screen, and a full-strength
-     accent makes it the first thing the eye lands on. -->
+<!-- Resync. Same quiet treatment as the add control. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="22dp" android:height="22dp"
+    android:width="20dp" android:height="20dp"
     android:viewportWidth="24" android:viewportHeight="24">
     <path
         android:strokeColor="@color/widget_control"
         android:strokeWidth="2"
         android:strokeLineCap="round"
+        android:strokeLineJoin="round"
         android:fillColor="#00000000"
-        android:pathData="M12,5.5 V18.5 M5.5,12 H18.5" />
+        android:pathData="M20,12 a8,8 0 1,1 -2.4,-5.7 M20,4 v4 h-4" />
 </vector>

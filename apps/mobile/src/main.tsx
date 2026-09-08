@@ -31,7 +31,7 @@ import {
  */
 function WidgetBridge() {
   const { open, completed } = useTasks();
-  const { authState } = useRecall();
+  const { authState, engine } = useRecall();
   const actions = useTaskActions();
   const previous = useRef<WidgetState | null>(null);
   const draining = useRef(false);
@@ -43,12 +43,19 @@ function WidgetBridge() {
     if (authState.status !== 'signed-in' || draining.current) return;
     draining.current = true;
     void (async () => {
+      // Wait for the local list to be in memory first. Sign-in resolves before
+      // the cache finishes loading, and an edit or deletion naming a task the
+      // engine has not loaded yet resolves to nothing and is dropped — the
+      // queue having already been claimed. Captures never showed this, because
+      // they do not depend on existing state.
+      await engine.whenReady();
+
       const ops = await takeWidgetOps();
       if (ops.length === 0) return;
       await applyWidgetOps(ops, actions);
       await confirmWidgetOps();
     })();
-  }, [authState, actions]);
+  }, [authState, actions, engine]);
 
   useEffect(() => {
     const signedIn = authState.status === 'signed-in';

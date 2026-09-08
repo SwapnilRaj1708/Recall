@@ -1,6 +1,7 @@
 package com.swapnil.recall
 
 import android.content.Intent
+import android.graphics.Paint
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 
@@ -55,9 +56,28 @@ private class RecallWidgetFactory(
 
         val views = RemoteViews(context.packageName, R.layout.widget_item)
         views.setTextViewText(R.id.item_text, task.text)
+
+        // A completed task reads as done three ways at once: the dot loses its
+        // colour, the text greys out, and it is struck through. On a panel
+        // glanced at rather than read, one signal is easy to miss.
         views.setImageViewResource(
-            R.id.item_check,
-            if (task.completed) R.drawable.ic_widget_checked else R.drawable.ic_widget_unchecked,
+            R.id.item_dot,
+            if (task.completed) R.drawable.ic_widget_dot_done else R.drawable.ic_widget_dot,
+        )
+        views.setTextColor(
+            R.id.item_text,
+            context.getColor(if (task.completed) R.color.widget_text_done else R.color.widget_text),
+        )
+        // RemoteViews has no strikethrough setter; setting the paint flags
+        // directly is the supported way to reach it from another process.
+        views.setInt(
+            R.id.item_text,
+            "setPaintFlags",
+            if (task.completed) {
+                Paint.STRIKE_THRU_TEXT_FLAG or Paint.ANTI_ALIAS_FLAG
+            } else {
+                Paint.ANTI_ALIAS_FLAG
+            },
         )
 
         // Two targets in one row. The template lives on the ListView; each row

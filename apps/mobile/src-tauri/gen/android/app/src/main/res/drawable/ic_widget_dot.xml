@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  An open task.
+
+  A small accent dot rather than a checkbox: at widget scale a box is the
+  loudest thing on the panel, and the panel is meant to sit quietly on the
+  wallpaper. The dot is drawn small inside a much larger touch target, so it
+  reads as a marker while still being easy to hit without looking.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp" android:height="20dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:fillColor="@color/widget_dot"
+        android:pathData="M12,7.6 m-4.4,0 a4.4,4.4 0 1,0 8.8,0 a4.4,4.4 0 1,0 -8.8,0" />
+</vector>

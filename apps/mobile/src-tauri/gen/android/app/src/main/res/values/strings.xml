@@ -13,4 +13,5 @@
     <string name="widget_dialog_ok">OK</string>
     <string name="widget_dialog_cancel">Cancel</string>
     <string name="widget_dialog_delete">Delete</string>
+    <string name="widget_sync_description">Sync now</string>
 </resources>

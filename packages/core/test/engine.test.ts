@@ -592,3 +592,93 @@ describe('unresponsive local storage', () => {
     expect(engine.getOpenTasks()).toHaveLength(1);
   });
 });
+
+describe('replaying a capture made elsewhere', () => {
+  /**
+   * The Android home-screen widget captures where the engine cannot reach, so
+   * it mints the id itself and the app replays the capture later. That queue is
+   * delivered at least once on purpose — losing a capture is unrecoverable,
+   * while a duplicate is merely annoying — which only works if replaying is
+   * genuinely idempotent.
+   */
+  it('uses the id it was given rather than minting a new one', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+    await engine.start();
+
+    const task = await engine.capture('From the widget', 'widget-supplied-id');
+    expect(task?.id).toBe('widget-supplied-id');
+  });
+
+  it('ignores a replay of a capture it already has', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+    await engine.start();
+
+    await engine.capture('From the widget', 'widget-supplied-id');
+    const again = await engine.capture('From the widget', 'widget-supplied-id');
+
+    expect(again).toBeNull();
+    expect(engine.getOpenTasks()).toHaveLength(1);
+  });
+
+  it('still mints an id when none is supplied', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+    await engine.start();
+
+    const first = await engine.capture('One');
+    const second = await engine.capture('Two');
+    expect(first?.id).toBeTruthy();
+    expect(first?.id).not.toBe(second?.id);
+  });
+});
+
+describe('knowing when the local list is loaded', () => {
+  /**
+   * The Android widget replays edits and deletions by id. Applied before the
+   * cache has loaded, those name tasks the engine does not have yet, resolve to
+   * nothing, and are dropped — after the queue has already been claimed. So
+   * anything replaying work needs to know when the list is genuinely present,
+   * and `start()` cannot answer that: it flips `started` synchronously, so a
+   * second caller awaiting it returns while the load is still running.
+   */
+  it('does not resolve before start is called', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+
+    let resolved = false;
+    void engine.whenReady().then(() => {
+      resolved = true;
+    });
+    await settle();
+    expect(resolved).toBe(false);
+  });
+
+  it('resolves once the cached list is in memory', async () => {
+    const server = new FakeServer();
+    const storage = new MemoryStorage();
+    const first = makeClient(server, { storage });
+    await first.engine.start();
+    await first.engine.capture('Captured earlier');
+
+    // A second engine over the same storage: whenReady must not resolve until
+    // that task is actually readable.
+    const second = makeClient(server, { storage });
+    void second.engine.start();
+    await second.engine.whenReady();
+    expect(second.engine.getOpenTasks().map((task) => task.text)).toContain('Captured earlier');
+  });
+
+  it('resolves even when the cache fails to load, rather than hanging', async () => {
+    // A caller blocked forever on a broken database would be worse than one
+    // that proceeds with an empty list.
+    const server = new FakeServer();
+    const storage = new MemoryStorage();
+    storage.loadTasks = () => new Promise(() => {});
+    const { engine } = makeClient(server, { storage, storageTimeoutMs: 20 });
+
+    void engine.start();
+    await expect(engine.whenReady()).resolves.toBeUndefined();
+  });
+});

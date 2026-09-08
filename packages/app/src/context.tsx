@@ -352,7 +352,13 @@ export function useTaskActions() {
   const { engine } = useRecall();
   return useMemo(
     () => ({
-      capture: (text: string) => engine.capture(text),
+      /**
+       * `id` is forwarded, not dropped: a surface that captured somewhere the
+       * engine could not reach — the Android widget — supplies the id it
+       * already minted, and replaying that capture then converges on the same
+       * row instead of creating a second.
+       */
+      capture: (text: string, id?: string) => engine.capture(text, id),
       setText: (id: string, text: string) => engine.setText(id, text),
       setCompleted: (id: string, completed: boolean) => engine.setCompleted(id, completed),
       remove: (id: string) => engine.remove(id),

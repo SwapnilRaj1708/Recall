@@ -72,6 +72,7 @@ class RecallWidgetProvider : AppWidgetProvider() {
         // PendingIntents, which is the whole reason this pattern exists.
         views.setPendingIntentTemplate(R.id.widget_list, rowTemplate(context, widgetId))
         views.setOnClickPendingIntent(R.id.widget_add, addIntent(context, widgetId))
+        views.setOnClickPendingIntent(R.id.widget_sync, syncIntent(context, widgetId))
 
         manager.updateAppWidget(widgetId, views)
         // The frame and the adapter's contents are refreshed separately.
@@ -108,8 +109,26 @@ class RecallWidgetProvider : AppWidgetProvider() {
         )
     }
 
+    private fun syncIntent(context: Context, widgetId: Int): PendingIntent {
+        val intent = Intent(context, WidgetActionActivity::class.java).apply {
+            action = WidgetActionActivity.ACTION_SYNC
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, widgetId)
+            data = Uri.parse("recall://widget/$widgetId/sync")
+        }
+        return PendingIntent.getActivity(
+            context,
+            // A third distinct request code. Two intents differing only in
+            // their extras collapse into one, and the strip would then do
+            // whichever was registered last wherever it was tapped.
+            widgetId + SYNC_REQUEST_OFFSET,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
     companion object {
         private const val ADD_REQUEST_OFFSET = 1_000_000
+        private const val SYNC_REQUEST_OFFSET = 2_000_000
 
         /** Repaint every instance. Called after anything changes the list. */
         fun refreshAll(context: Context) {

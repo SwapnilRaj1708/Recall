@@ -91,6 +91,8 @@ export class SyncEngine {
   private version = 0;
 
   private started = false;
+  private readonly readyPromise: Promise<void>;
+  private markReady: () => void = () => {};
   private flushing = false;
   private pulling = false;
   private consecutiveFailures = 0;
@@ -123,6 +125,23 @@ export class SyncEngine {
     this.storageTimeoutMs = options.storageTimeoutMs ?? STORAGE_TIMEOUT_MS;
     this.outbox = new Outbox(this.storage);
     this.status.online = readOnline();
+    this.readyPromise = new Promise((resolve) => {
+      this.markReady = resolve;
+    });
+  }
+
+  /**
+   * Resolves once the local cache has been read into memory.
+   *
+   * `start()` cannot be awaited for this: it sets `started` synchronously, so a
+   * second caller returns immediately while the load is still in flight. That
+   * matters for anything replaying work against tasks that already exist —
+   * the Android widget's queue applies edits and deletions by id, and an id the
+   * engine has not loaded yet simply does not resolve, so the operation is
+   * dropped without a word.
+   */
+  whenReady(): Promise<void> {
+    return this.readyPromise;
   }
 
   // ---------------------------------------------------------------- lifecycle
@@ -151,6 +170,11 @@ export class SyncEngine {
     // is on screen before any network call is attempted.
     mergeAll(this.tasks, stored);
     for (const task of this.tasks.values()) this.clock.observe(task.updatedAt);
+    // Released here rather than at the end of start(): everything below is
+    // network setup, and a waiter only needs the local list to be present.
+    // Reached even when loading failed, so a broken cache cannot hang a caller.
+    this.markReady();
+
 
     try {
       this.cursor = await withTimeout(
