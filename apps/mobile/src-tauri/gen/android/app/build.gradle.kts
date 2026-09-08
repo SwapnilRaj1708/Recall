@@ -13,6 +13,24 @@ val tauriProperties = Properties().apply {
     }
 }
 
+/*
+ * Release signing.
+ *
+ * Read from keystore.properties, which is git-ignored and never committed:
+ * the key and its password are the only things standing between this app's
+ * identity and anyone else's, and Android refuses an update signed by a
+ * different key — so losing them means uninstalling and reinstalling rather
+ * than updating.
+ *
+ * Absent, the release build falls back to the debug key so the build still
+ * works; it just is not a distributable artifact.
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val hasReleaseKey = keystoreProperties.getProperty("storeFile") != null
+
 android {
     compileSdk = 36
     namespace = "com.swapnil.recall"
@@ -24,6 +42,17 @@ android {
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
     }
+    signingConfigs {
+        if (hasReleaseKey) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
@@ -37,6 +66,7 @@ android {
             }
         }
         getByName("release") {
+            if (hasReleaseKey) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

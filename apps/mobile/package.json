@@ -10,7 +10,8 @@
     "tauri": "tauri",
     "android:init": "node ../../scripts/android-env.mjs pnpm tauri android init",
     "android:dev": "node ../../scripts/android-env.mjs pnpm tauri android dev",
-    "android:build": "node ../../scripts/android-env.mjs pnpm tauri android build --debug --apk --target aarch64"
+    "android:build": "node ../../scripts/android-env.mjs pnpm tauri android build --debug --apk --target aarch64",
+    "android:release": "node ../../scripts/android-env.mjs pnpm tauri android build --apk --target aarch64"
   },
   "dependencies": {
     "@recall/app": "workspace:*",

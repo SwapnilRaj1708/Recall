@@ -22,6 +22,12 @@ apps/mobile/src-tauri/gen/schemas/
 apps/mobile/src-tauri/gen/android/.tauri/
 apps/mobile/src-tauri/gen/android/app/src/main/assets/
 
+# Android signing. The key and its password are the app's identity;
+# Android refuses an update signed by a different one.
+*.jks
+*.keystore
+keystore.properties
+
 # Extension packaging
 apps/extension/*.zip
 apps/extension/key.pem
