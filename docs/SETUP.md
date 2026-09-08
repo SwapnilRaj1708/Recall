@@ -116,10 +116,19 @@ actually protect your data.
 **Supabase → Authentication → Sign In / Providers → Google**: enable it, paste
 the Client ID and Client secret, save.
 
-### C3. Allow the redirect URLs
+### C3. Set the site URL and allow the redirect URLs
 
-**Supabase → Authentication → URL Configuration → Redirect URLs.** Add all of
-these:
+Both live under **Supabase → Authentication → URL Configuration**, and the
+first one is easy to skip.
+
+**Site URL** is the address Supabase falls back to when a client asks to be
+sent somewhere that is *not* on the redirect list. It does not warn — sign-in
+appears to work and then lands on the wrong host, carrying a `?code=` that the
+receiving origin cannot exchange. While you are only running locally, set it to
+`http://localhost:5173`; once the app is deployed (step F), change it to the
+deployed URL, with no trailing slash and no wildcard.
+
+**Redirect URLs** is the allowlist. Add all of these:
 
 ```
 http://localhost:5173/**
@@ -205,8 +214,16 @@ unpacked** → select `apps/extension/dist`.
    > last step fails, with *No Output Directory named "dist" found*.
 5. Add two environment variables: `VITE_SUPABASE_URL` and
    `VITE_SUPABASE_ANON_KEY`.
-6. Deploy, then add `https://<your-app>.vercel.app/**` to the Supabase redirect
-   list from step C3.
+6. Deploy, then go back to **Supabase → Authentication → URL Configuration**
+   and make *both* changes from step C3:
+   - add `https://<your-app>.vercel.app/**` to **Redirect URLs**, and
+     optionally `https://<your-app>-*.vercel.app/**` so preview deployments can
+     sign in too;
+   - change **Site URL** to `https://<your-app>.vercel.app`.
+
+   Adding only the redirect URL is the more common half-fix. Leaving Site URL
+   on localhost means anything Supabase declines to redirect quietly goes to a
+   dev server instead of the deployed app.
 7. On your phone, open the URL in Chrome → menu → **Add to Home screen**. It
    installs as an app and works offline.
 
