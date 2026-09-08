@@ -21,6 +21,8 @@ export interface TaskRowProps {
   meta?: ReactNode;
   dropIndicator?: 'before' | 'after' | null;
   dragging?: boolean;
+  /** Still only on this device: captured offline, or not yet pushed. */
+  unsynced?: boolean;
 
   onToggle: (completed: boolean) => void;
   onEdit: (text: string) => void;
@@ -39,6 +41,7 @@ export function TaskRow({
   meta,
   dropIndicator = null,
   dragging = false,
+  unsynced = false,
   onToggle,
   onEdit,
   onDelete,
@@ -94,7 +97,11 @@ export function TaskRow({
         dragging && styles.rowDragging,
         dropIndicator === 'before' && styles.rowDropBefore,
         dropIndicator === 'after' && styles.rowDropAfter,
+        unsynced && styles.rowUnsynced,
       )}
+      // Announced, not just coloured: colour alone would leave this invisible
+      // to a screen reader and to anyone who cannot distinguish the tone.
+      aria-describedby={unsynced ? 'rc-unsynced-hint' : undefined}
       onDragOver={
         onDragOverHalf
           ? (event) => {

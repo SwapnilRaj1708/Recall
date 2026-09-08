@@ -94,6 +94,12 @@
   --rc-danger-soft: rgb(209 52 60 / 12%);
   --rc-success: #2f8f5b;
   --rc-warning: #b4741a;
+  /* A task that exists only on this device: captured offline, or replayed
+     from the home-screen widget and not yet pushed. Deliberately close to
+     the warning tone without being alarming — nothing is wrong, it just is
+     not safe anywhere else yet. */
+  --rc-unsynced: #9a6a12;
+  --rc-unsynced-mark: rgb(180 116 26 / 65%);
 
   /* Overlay scrim. Dark mode needs far more of it: a 30% black over a near
      black background barely reads as a dim at all. */
@@ -143,6 +149,8 @@
 
   --rc-danger: #f2646c;
   --rc-danger-soft: rgb(242 100 108 / 16%);
+  --rc-unsynced: #d9a441;
+  --rc-unsynced-mark: rgb(217 164 65 / 70%);
   --rc-success: #57c98a;
   --rc-warning: #dfa24a;
 

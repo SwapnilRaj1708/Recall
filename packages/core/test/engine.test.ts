@@ -682,3 +682,82 @@ describe('knowing when the local list is loaded', () => {
     await expect(engine.whenReady()).resolves.toBeUndefined();
   });
 });
+
+describe('knowing which tasks are only on this device', () => {
+  /**
+   * The "n pending" badge counts unsynced work but cannot say which rows it
+   * is. Surfaces mark those rows so a capture made offline — or replayed from
+   * the home-screen widget seconds ago — is visibly not-yet-safe rather than
+   * indistinguishable from one that has been on the server for a week.
+   */
+  it('reports a fresh capture as unsynced', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+    await engine.start();
+
+    const task = await engine.capture('Just captured');
+    expect(engine.getUnsyncedIds().has(task!.id)).toBe(true);
+  });
+
+  it('stops reporting it once the server has it', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+    await engine.start();
+
+    const task = await engine.capture('Just captured');
+    await engine.syncNow();
+
+    expect(engine.getUnsyncedIds().has(task!.id)).toBe(false);
+    expect(engine.getUnsyncedIds().size).toBe(0);
+  });
+
+  it('reports work captured while offline, until the network comes back', async () => {
+    const server = new FakeServer();
+    const { engine, remote } = makeClient(server);
+    await engine.start();
+    await engine.syncNow();
+
+    // The remote has to actually refuse: setOnline only flips the engine's own
+    // status flag, and a push would still succeed behind it.
+    remote.goOffline();
+    engine.setOnline(false);
+    const offline = await engine.capture('Captured on a train');
+    await engine.syncNow();
+
+    // Still ours alone. Marking it is the honest thing to show.
+    expect(engine.getUnsyncedIds().has(offline!.id)).toBe(true);
+
+    remote.goOnline();
+    engine.setOnline(true);
+    await engine.syncNow();
+    expect(engine.getUnsyncedIds().has(offline!.id)).toBe(false);
+  });
+
+  it('reports an edit to a task the server already has', async () => {
+    const server = new FakeServer();
+    const { engine } = makeClient(server);
+    await engine.start();
+    const task = await engine.capture('Original');
+    await engine.syncNow();
+    expect(engine.getUnsyncedIds().size).toBe(0);
+
+    await engine.setText(task!.id, 'Edited but not yet pushed');
+    expect(engine.getUnsyncedIds().has(task!.id)).toBe(true);
+  });
+
+  it('is empty on a list that came from the server', async () => {
+    const server = new FakeServer();
+    const a = makeClient(server);
+    await a.engine.start();
+    await a.engine.capture('From another device');
+    await a.engine.syncNow();
+
+    const b = makeClient(server);
+    await b.engine.start();
+    await b.engine.syncNow();
+
+    // Nothing here originated locally, so nothing should be marked.
+    expect(b.engine.getOpenTasks()).toHaveLength(1);
+    expect(b.engine.getUnsyncedIds().size).toBe(0);
+  });
+});

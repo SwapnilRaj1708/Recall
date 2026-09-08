@@ -1,7 +1,7 @@
 import type { Task } from '@recall/core';
 import { EmptyState, Icon, QuickAdd, TaskRow, cx, useToast, type QuickAddHandle } from '@recall/ui';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { useTaskActions, useTasks } from '../context.js';
+import { useTaskActions, useTasks, useUnsyncedIds } from '../context.js';
 import styles from './TaskListView.module.css';
 
 export interface TaskListViewProps {
@@ -30,6 +30,7 @@ export function TaskListView({
 }: TaskListViewProps) {
   const { open, completed } = useTasks();
   const actions = useTaskActions();
+  const unsynced = useUnsyncedIds();
   const { toast } = useToast();
   const compact = variant === 'widget';
 
@@ -123,6 +124,17 @@ export function TaskListView({
           )
         ) : null}
 
+        {/*
+          What the marked rows point at. One node for the list rather than one
+          per row: the text is identical, and a screen reader announcing it
+          once per task would be worse than not saying it at all.
+        */}
+        {unsynced.size > 0 ? (
+          <span id="rc-unsynced-hint" className="rc-sr-only">
+            Not synced yet — saved on this device only
+          </span>
+        ) : null}
+
         {visibleOpen.length > 0 ? (
           <ul className={styles.list}>
             {visibleOpen.map((task) => (
@@ -134,6 +146,7 @@ export function TaskListView({
                 compact={compact}
                 draggable={canReorder}
                 dragging={draggingId === task.id}
+                unsynced={unsynced.has(task.id)}
                 dropIndicator={dropTarget?.id === task.id ? dropTarget.half : null}
                 meta={compact ? undefined : relativeTime(task.createdAt)}
                 onToggle={(next) => void actions.setCompleted(task.id, next)}

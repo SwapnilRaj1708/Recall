@@ -5,6 +5,7 @@ export {
   useTasks,
   useSyncStatus,
   useTaskActions,
+  useUnsyncedIds,
 } from './context.js';
 export type { RecallProviderProps, RecallContextValue, TaskLists } from './context.js';
 

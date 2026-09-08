@@ -210,3 +210,24 @@
   letter-spacing: 0;
   text-transform: none;
 }
+
+/*
+ * A task that exists only on this device.
+ *
+ * A left edge mark plus a warmer text colour, rather than a badge: the list is
+ * read by scanning it, and a row that is one shade different and has a marked
+ * edge is noticed without anything having to be read. It resolves on its own
+ * once the push lands, so it must not look like an error demanding action.
+ */
+.rowUnsynced {
+  box-shadow: inset 2px 0 0 0 var(--rc-unsynced-mark);
+}
+
+.rowUnsynced .text {
+  color: var(--rc-unsynced);
+}
+
+/* Completion still wins: a finished task reads as finished either way. */
+.rowUnsynced .textCompleted {
+  color: var(--rc-text-tertiary);
+}

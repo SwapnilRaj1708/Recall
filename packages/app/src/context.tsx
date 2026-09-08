@@ -348,6 +348,22 @@ export function useSyncStatus(): SyncStatus {
 }
 
 /** Stable, memoised task actions, so callbacks do not re-create on every render. */
+/**
+ * Which tasks are still only on this device.
+ *
+ * Rendered differently so a capture that has not reached the server is
+ * visibly not-yet-safe. That matters most right after the app opens with work
+ * replayed from the home-screen widget: those rows exist locally seconds
+ * before they exist anywhere else, and silently showing them as ordinary
+ * tasks would overstate what has actually been saved.
+ */
+export function useUnsyncedIds(): ReadonlySet<string> {
+  const { engine } = useRecall();
+  const version = useEngineVersion();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => engine.getUnsyncedIds(), [engine, version]);
+}
+
 export function useTaskActions() {
   const { engine } = useRecall();
   return useMemo(

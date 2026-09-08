@@ -144,6 +144,19 @@ export class SyncEngine {
     return this.readyPromise;
   }
 
+  /**
+   * Tasks whose current version has not reached the server yet.
+   *
+   * The outbox already knows this — it is what the "n pending" badge counts —
+   * but a count cannot tell you *which* rows are still local. Surfaces use this
+   * to mark them, so a capture made offline, or replayed from the home-screen
+   * widget, is visibly not-yet-safe rather than indistinguishable from a task
+   * that has been on the server for a week.
+   */
+  getUnsyncedIds(): ReadonlySet<string> {
+    return new Set(this.outbox.all().map((entry) => entry.taskId));
+  }
+
   // ---------------------------------------------------------------- lifecycle
 
   async start(): Promise<void> {
