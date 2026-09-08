@@ -211,6 +211,54 @@ two windows that float over the desktop, and `opaqueTheme` drops transparency
 everywhere else, where there is nothing behind the surface but the app's own
 background and translucency would only cost legibility.
 
+## The phone
+
+`apps/mobile` is a second Tauri application, not a mobile target of the desktop
+one. The desktop shell is built around a tray, a global hotkey, autostart and
+three frameless always-on-top windows; Android has none of those, and its first
+configured window is the desktop widget, so a mobile build of that crate would
+boot the phone into the widget. Both shells render the same `FullView` over the
+same engine — the duplication is the shell, which is genuinely different, not
+the product.
+
+Sign-in returns through a `recall://auth-callback` deep link rather than the
+loopback port the desktop listens on. A custom scheme survives the browser being
+backgrounded, which loopback does not, and it is what Chrome Custom Tabs hand
+back to the app.
+
+### The home-screen widget
+
+An Android home-screen widget is an `AppWidgetProvider` rendering `RemoteViews`.
+It runs in the app's process but **outside the webview**, so it cannot read the
+IndexedDB mirror that every other surface uses. That single constraint shapes
+the whole design.
+
+Because the widget is meant to be acted on — tick something off, add something —
+and not merely read, those writes have to reach the server. Queueing them for
+the app to sync later would mean a task ticked off on the home screen stays open
+on the desktop until the phone app is next opened, which for an external-memory
+system is the wrong failure. So the widget is a small native Supabase client of
+its own:
+
+- The app publishes a **snapshot** of the list, plus the session, into app-private
+  storage; the widget renders from it and so paints instantly with no network.
+- The widget reads and writes Supabase directly for its own actions. It needs no
+  merge logic, because `push_tasks` resolves per-field last-write-wins
+  server-side — a payoff from that decision well beyond the surface it was
+  designed for.
+
+The honest limits, which are Android's rather than ours:
+
+- **Freshness while the app is closed.** Background refresh has a floor of about
+  fifteen minutes (`WorkManager`; `updatePeriodMillis` is worse at thirty). A task
+  captured on the desktop can take that long to reach the home screen if the phone
+  app is not running. Anything done *on* the widget is immediate, and opening the
+  app refreshes it at once. Real push would need Firebase Cloud Messaging and a
+  server to send from.
+- **The launcher owns the frame.** Samsung's One UI applies its own background and
+  corner treatment to widgets, and lets the user override widget transparency in
+  system settings. The widget requests transparency; the launcher has the last word.
+
 ## Authentication
 
 Google OAuth with PKCE, everywhere. The three shells differ only in how the
