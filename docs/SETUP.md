@@ -191,13 +191,20 @@ unpacked** → select `apps/extension/dist`.
 
 1. Push the repository to GitHub.
 2. <https://vercel.com> → **Add New → Project** → import the repository.
-3. Vercel reads [`vercel.json`](../vercel.json), so the build settings are
-   already correct. Leave them alone.
-4. Add two environment variables: `VITE_SUPABASE_URL` and
+3. **Set Root Directory to the repository root** (leave it empty, or `./`).
+   Vercel scans for a framework and, finding a Vite app in `apps/web`, offers
+   to set the root directory there. Accept that and the build runs from inside
+   `apps/web`, where the paths in [`vercel.json`](../vercel.json) —
+   `apps/web/dist`, `pnpm --filter @recall/web build` — no longer resolve. The
+   deploy then fails with *No Output Directory named "dist" found*, after a
+   build that otherwise succeeded.
+4. Leave Build Command, Output Directory and Install Command empty. With the
+   root directory correct, `vercel.json` supplies all three.
+5. Add two environment variables: `VITE_SUPABASE_URL` and
    `VITE_SUPABASE_ANON_KEY`.
-5. Deploy, then add `https://<your-app>.vercel.app/**` to the Supabase redirect
+6. Deploy, then add `https://<your-app>.vercel.app/**` to the Supabase redirect
    list from step C3.
-6. On your phone, open the URL in Chrome → menu → **Add to Home screen**. It
+7. On your phone, open the URL in Chrome → menu → **Add to Home screen**. It
    installs as an app and works offline.
 
 ---
