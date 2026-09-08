@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget colours, light.
+
+  These are a deliberate copy of the tokens in packages/ui/src/tokens.css
+  rather than a reference to them: a RemoteViews tree is inflated by the
+  launcher's process and cannot read anything from the webview. The values are
+  the light theme's accent, text and secondary-text tokens, with the surface
+  carrying the same alpha the desktop widget uses (0.82, or D1 in hex).
+-->
+<resources>
+    <color name="widget_surface">#D1FFFFFF</color>
+    <color name="widget_text">#FF1B1B20</color>
+    <color name="widget_text_secondary">#FF63636E</color>
+    <color name="widget_accent">#FF5B5BD6</color>
+    <color name="widget_ripple">#33000000</color>
+</resources>

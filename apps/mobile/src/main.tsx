@@ -1,18 +1,68 @@
-import { DemoProvider, FullView, RecallProvider } from '@recall/app';
+import {
+  DemoProvider,
+  FullView,
+  RecallProvider,
+  useRecall,
+  useTaskActions,
+  useTasks,
+} from '@recall/app';
 import { ToastProvider } from '@recall/ui';
-import { StrictMode, type ReactNode } from 'react';
+import { StrictMode, useEffect, useRef, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { config, createStorage, demo } from './runtime.js';
 import { androidOAuthLauncher } from './tauri.js';
+import {
+  applyWidgetOps,
+  buildWidgetState,
+  confirmWidgetOps,
+  publishWidgetState,
+  sameWidgetState,
+  takeWidgetOps,
+  type WidgetState,
+} from './widget.js';
 
 /**
- * The phone app.
+ * Keeps the home-screen widget's snapshot in step with the list.
  *
- * Deliberately the same `FullView` the desktop and web apps render: one
- * product, four shells. What differs is the shell around it — sign-in comes
- * back through a deep link here, and the home-screen widget is fed from this
- * process.
+ * Renders nothing. It sits inside the provider so it sees the same engine
+ * everything else does, and writes only when what the widget would draw has
+ * actually changed — the engine's version counter ticks for reasons the widget
+ * does not care about, and this runs on the capture path.
  */
+function WidgetBridge() {
+  const { open, completed } = useTasks();
+  const { authState } = useRecall();
+  const actions = useTaskActions();
+  const previous = useRef<WidgetState | null>(null);
+  const draining = useRef(false);
+
+  // Anything tapped on the home screen while the app was closed is replayed
+  // the moment the app has a session. Runs once: the shell holds the batch
+  // until it is confirmed, so this cannot half-apply and move on.
+  useEffect(() => {
+    if (authState.status !== 'signed-in' || draining.current) return;
+    draining.current = true;
+    void (async () => {
+      const ops = await takeWidgetOps();
+      if (ops.length === 0) return;
+      await applyWidgetOps(ops, actions);
+      await confirmWidgetOps();
+    })();
+  }, [authState, actions]);
+
+  useEffect(() => {
+    const signedIn = authState.status === 'signed-in';
+    // Open tasks first: the widget is for what is still to be done, and a
+    // small widget shows only the first few rows.
+    const next = buildWidgetState([...open, ...completed], signedIn);
+    if (sameWidgetState(previous.current, next)) return;
+    previous.current = next;
+    void publishWidgetState(next);
+  }, [open, completed, authState]);
+
+  return null;
+}
+
 function Providers({ children }: { children: ReactNode }) {
   if (demo) return <DemoProvider surface="mobile">{children}</DemoProvider>;
   return (
@@ -36,6 +86,7 @@ createRoot(root).render(
   <StrictMode>
     <Providers>
       <ToastProvider>
+        <WidgetBridge />
         <FullView />
       </ToastProvider>
     </Providers>

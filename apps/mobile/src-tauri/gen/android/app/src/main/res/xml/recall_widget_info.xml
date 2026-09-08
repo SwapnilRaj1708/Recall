@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The home-screen widget.
+
+  Sizing follows Android's cell formula (70 * cells - 30), so minWidth 110dp is
+  two columns and minHeight 40dp is one row — the smallest the user asked for.
+  targetCellWidth/Height are the API 31+ way of saying the same thing in cells,
+  and are what a current launcher actually reads; the dp minimums remain for
+  anything older.
+
+  updatePeriodMillis is 30 minutes because that is Android's floor for this
+  mechanism. It is a backstop: the app refreshes the widget whenever it has new
+  data, and the widget refreshes itself after any action taken on it.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="3"
+    android:maxResizeWidth="640dp"
+    android:maxResizeHeight="640dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_root"
+    android:previewLayout="@layout/widget_root"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_description" />

@@ -248,9 +248,15 @@ export class SyncEngine {
    * task. Blank input returns null so every caller can pass raw text without
    * pre-validating it.
    */
-  async capture(text: string): Promise<Task | null> {
+  /**
+   * `id` is for replaying a capture made somewhere the engine could not reach —
+   * see `createTask`. A capture whose id is already known is a no-op, which is
+   * what makes replaying a queue safe.
+   */
+  async capture(text: string, id?: string): Promise<Task | null> {
     if (isBlank(text)) return null;
-    const task = createTask(text, positionForNewCapture(this.getTasks()), this.clock);
+    if (id !== undefined && this.tasks.has(id)) return null;
+    const task = createTask(text, positionForNewCapture(this.getTasks()), this.clock, id);
     return this.applyLocal(task);
   }
 

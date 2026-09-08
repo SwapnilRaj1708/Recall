@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -136,5 +136,59 @@ describe('the deploy will find what it expects', () => {
 
   it('keeps a lockfile, since the install command requires a frozen one', () => {
     expect(existsSync(join(ROOT, 'pnpm-lock.yaml'))).toBe(true);
+  });
+});
+
+describe('Android resources', () => {
+  /**
+   * Walked from disk rather than listed from git.
+   *
+   * The first version of this asked `git ls-files`, which lists only *tracked*
+   * files — so a resource written but not yet committed was invisible, and the
+   * suite passed against a file deliberately broken to check it. A test that
+   * cannot see new work is worse than no test, because it reports confidence
+   * it does not have.
+   */
+  const ANDROID_MAIN = join(ROOT, 'apps/mobile/src-tauri/gen/android/app/src/main');
+
+  /** Relative to ANDROID_MAIN, so the case names stay readable. */
+  function xmlFilesUnder(dir: string, prefix = ''): string[] {
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) return xmlFilesUnder(join(dir, entry.name), relative);
+      return entry.name.endsWith('.xml') ? [relative] : [];
+    });
+  }
+
+  const files = xmlFilesUnder(ANDROID_MAIN);
+  const read = (file: string) => readFileSync(join(ANDROID_MAIN, file), 'utf8');
+
+  it('finds the resource files this suite is meant to cover', () => {
+    // Includes the widget's own layouts, colours and provider metadata; a
+    // count this low would mean the walk is looking in the wrong place.
+    expect(files.length).toBeGreaterThan(8);
+    expect(files.some((file) => file.endsWith('recall_widget_info.xml'))).toBe(true);
+    expect(files.some((file) => file.endsWith('widget_colors.xml'))).toBe(true);
+  });
+
+  /**
+   * XML forbids "--" inside a comment. It is an easy thing to write by
+   * accident here, because the widget's colours are documented by naming the
+   * CSS custom properties they copy — and those are spelled `--rc-accent`.
+   * AAPT rejects it, but only after a Rust cross-compile and a Gradle run.
+   */
+  it.each(files)('%s has no "--" inside an XML comment', (file) => {
+    const raw = read(file);
+    for (const match of raw.matchAll(/<!--([\s\S]*?)-->/g)) {
+      expect(match[1], `illegal "--" in a comment in ${file}`).not.toContain('--');
+    }
+  });
+
+  it.each(files)('%s is well-formed enough to have balanced comments', (file) => {
+    const raw = read(file);
+    const opens = (raw.match(/<!--/g) ?? []).length;
+    const closes = (raw.match(/-->/g) ?? []).length;
+    expect(opens).toBe(closes);
   });
 });

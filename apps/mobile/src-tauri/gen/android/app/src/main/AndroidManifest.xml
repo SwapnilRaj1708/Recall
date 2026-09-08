@@ -48,5 +48,34 @@
             android:name="android.support.FILE_PROVIDER_PATHS"
             android:resource="@xml/file_paths" />
         </provider>
+        <!-- The home-screen widget. -->
+        <receiver
+            android:name=".RecallWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/recall_widget_info" />
+        </receiver>
+
+        <!-- Backs the widget's scrolling list. The permission is what allows
+             the launcher's process to bind to it; without it the list is
+             permanently empty and nothing says why. -->
+        <service
+            android:name=".RecallWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
+        <!-- Transparent shell for taps on the widget: completes without ever
+             drawing, or shows a dialog over the home screen. -->
+        <activity
+            android:name=".WidgetActionActivity"
+            android:theme="@style/Theme.RecallWidgetDialog"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:exported="false" />
+
     </application>
 </manifest>

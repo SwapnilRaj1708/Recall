@@ -33,10 +33,21 @@ export function createTask(
   text: string,
   position: string,
   clock: Clock = defaultClock,
+  /**
+   * Supply the id when the task already has one.
+   *
+   * Ids are client-generated everywhere in this system, so a surface that
+   * cannot reach the engine — the Android home-screen widget — can still mint
+   * one at the moment of capture. Replaying that capture later then converges
+   * on the same row instead of creating a second copy, which matters because
+   * the widget's queue is delivered at least once by design: losing a capture
+   * is unrecoverable, while a duplicate is merely annoying.
+   */
+  id: string = newId(),
 ): Task {
   const now = clock.now();
   return withDerivedUpdatedAt({
-    id: newId(),
+    id,
     text: normalizeText(text),
     completed: false,
     completedAt: null,

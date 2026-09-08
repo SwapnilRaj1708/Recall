@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget colours, dark. Mirrors the dark tokens in packages/ui/src/tokens.css. -->
+<resources>
+    <color name="widget_surface">#D116161A</color>
+    <color name="widget_text">#FFF2F2F5</color>
+    <color name="widget_text_secondary">#FF9A9AA6</color>
+    <color name="widget_accent">#FF8B8BEA</color>
+    <color name="widget_ripple">#33FFFFFF</color>
+</resources>

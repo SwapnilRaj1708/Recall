@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget's own surface: a subtle translucent panel.
+
+  Android 12+ clips widgets to the launcher's own corner radius, so this radius
+  is a floor rather than the final shape. Samsung's One UI also applies its own
+  background treatment and lets the user override widget transparency in system
+  settings — the launcher has the last word here, not us.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/widget_surface" />
+    <corners android:radius="20dp" />
+</shape>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The widget's frame: a scrolling list, with a full-height strip down the right
+  edge for adding.
+
+  The strip is a sibling of the list rather than part of each row, so it reads
+  as one continuous control the whole height of the widget no matter how many
+  tasks are showing — and it stays reachable when the list is scrolled or empty.
+
+  Only the view types RemoteViews supports appear here: LinearLayout,
+  FrameLayout, ListView, TextView, ImageView.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:padding="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <ListView
+                android:id="@+id/widget_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@null"
+                android:dividerHeight="0dp"
+                android:scrollbars="none"
+                android:clipToPadding="false"
+                android:paddingStart="4dp"
+                android:paddingEnd="2dp" />
+
+            <!-- ListView's own empty view, shown by the framework when the
+                 adapter is empty. Also what a signed-out widget shows. -->
+            <TextView
+                android:id="@+id/widget_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:padding="10dp"
+                android:textSize="13sp"
+                android:textColor="@color/widget_text_secondary"
+                android:text="@string/widget_empty" />
+        </FrameLayout>
+
+        <!-- The add strip. One target, full height, seamless with the panel. -->
+        <LinearLayout
+            android:id="@+id/widget_add"
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="@drawable/widget_row_ripple"
+            android:contentDescription="@string/widget_add_description">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_widget_add"
+                android:contentDescription="@string/widget_add_description" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

@@ -1,4 +1,16 @@
 <resources>
     <string name="app_name">"Recall"</string>
     <string name="main_activity_title">"Recall"</string>
+    <string name="widget_name">Recall</string>
+    <string name="widget_description">Your task list, on the home screen.</string>
+    <string name="widget_empty">Nothing to remember.</string>
+    <string name="widget_loading">Loading…</string>
+    <string name="widget_signed_out">Open Recall to sign in.</string>
+    <string name="widget_add_description">Add a task</string>
+    <string name="widget_dialog_add_title">Add a task</string>
+    <string name="widget_dialog_edit_title">Edit task</string>
+    <string name="widget_dialog_hint">What do you need to remember?</string>
+    <string name="widget_dialog_ok">OK</string>
+    <string name="widget_dialog_cancel">Cancel</string>
+    <string name="widget_dialog_delete">Delete</string>
 </resources>

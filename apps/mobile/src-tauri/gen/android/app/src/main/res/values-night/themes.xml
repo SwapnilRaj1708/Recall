@@ -3,4 +3,12 @@
     <style name="Theme.recall_mobile" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
     </style>
+    <!-- The widget's dialog shell: transparent, so the home screen stays
+         visible behind it and a tap does not feel like launching an app. -->
+    <style name="Theme.RecallWidgetDialog" parent="Theme.MaterialComponents.DayNight.Dialog.Alert">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+    </style>
 </resources>
