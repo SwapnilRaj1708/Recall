@@ -8,9 +8,9 @@
     "build:vite": "vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "tauri": "tauri",
-    "android:init": "tauri android init",
-    "android:dev": "tauri android dev",
-    "android:build": "tauri android build --apk --target aarch64"
+    "android:init": "node ../../scripts/android-env.mjs pnpm tauri android init",
+    "android:dev": "node ../../scripts/android-env.mjs pnpm tauri android dev",
+    "android:build": "node ../../scripts/android-env.mjs pnpm tauri android build --debug --apk --target aarch64"
   },
   "dependencies": {
     "@recall/app": "workspace:*",
