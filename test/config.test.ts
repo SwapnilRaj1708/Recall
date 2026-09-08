@@ -47,30 +47,45 @@ interface VercelConfig {
   buildCommand: string;
   outputDirectory: string;
   rewrites: { source: string; destination: string }[];
+  headers: unknown[];
 }
 
 /**
- * Read lazily, inside each case.
+ * Vercel looks for `vercel.json` inside the project's Root Directory, not at
+ * the repository root. Importing this monorepo, Vercel detects the Vite app and
+ * proposes `apps/web` as the root — at which point a config sitting at the
+ * repository root is simply invisible, the framework preset takes over, and the
+ * deploy fails looking for the wrong output directory.
  *
- * Parsing at module scope would turn a malformed file into a collection error —
- * vitest reports "no tests" and never names the one assertion that was written
- * to catch it, which is a worse signal than the bug deserves.
+ * Rather than depend on one dashboard setting being right, both locations carry
+ * a config, each with paths relative to itself. These tests keep the pair
+ * honest: the routing must be identical, and both must point at the same build
+ * output, so it cannot matter which root Vercel picks.
  */
-function vercelConfig(): VercelConfig {
-  return JSON.parse(readFileSync(join(ROOT, 'vercel.json'), 'utf8')) as VercelConfig;
+const CONFIGS = {
+  'vercel.json': 'vercel.json',
+  'apps/web/vercel.json': 'apps/web/vercel.json',
+} as const;
+
+function readConfig(file: string): VercelConfig {
+  return JSON.parse(readFileSync(join(ROOT, file), 'utf8')) as VercelConfig;
 }
 
-describe('vercel.json', () => {
-  it('builds the web app out of the workspace and serves what it produced', () => {
-    const config = vercelConfig();
-    // Vercel does not understand a pnpm workspace on its own; these two lines
-    // are the whole reason the deploy needs no settings in the dashboard.
-    expect(config.buildCommand).toContain('@recall/web');
-    expect(config.outputDirectory).toBe('apps/web/dist');
+describe.each(Object.values(CONFIGS))('%s', (file) => {
+  it('builds the web app', () => {
+    // Either spelling is fine; what matters is that it is the web app's build.
+    expect(readConfig(file).buildCommand).toMatch(/@recall\/web build$|^pnpm build$/);
+  });
+
+  it('points at the build output, resolved from its own directory', () => {
+    const config = readConfig(file);
+    const resolved = resolve(dirname(join(ROOT, file)), config.outputDirectory);
+    // Both configs must name the same real directory, whichever is in force.
+    expect(resolved).toBe(resolve(ROOT, 'apps/web/dist'));
   });
 
   it('has a rewrite whose source is a usable regular expression', () => {
-    const [rewrite] = vercelConfig().rewrites;
+    const [rewrite] = readConfig(file).rewrites;
     expect(rewrite).toBeDefined();
     expect(() => new RegExp(`^${rewrite!.source}$`)).not.toThrow();
   });
@@ -90,8 +105,22 @@ describe('vercel.json', () => {
     // service worker, its precache manifest and the hashed assets must be
     // served as themselves. Rewriting sw.js would break offline capture
     // silently — the app would look fine until the network went away.
-    const source = vercelConfig().rewrites[0]!.source;
+    const source = readConfig(file).rewrites[0]!.source;
     expect(new RegExp(`^${source}$`).test(path)).toBe(rewritten);
+  });
+});
+
+describe('the two Vercel configs', () => {
+  it('route identically, so the deploy does not depend on which root is used', () => {
+    const root = readConfig(CONFIGS['vercel.json']);
+    const web = readConfig(CONFIGS['apps/web/vercel.json']);
+    expect(web.rewrites).toEqual(root.rewrites);
+    expect(web.headers).toEqual(root.headers);
+  });
+
+  it('differ only where the path has to differ', () => {
+    expect(readConfig(CONFIGS['vercel.json']).outputDirectory).toBe('apps/web/dist');
+    expect(readConfig(CONFIGS['apps/web/vercel.json']).outputDirectory).toBe('dist');
   });
 });
 
