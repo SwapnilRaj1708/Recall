@@ -1,0 +1,8 @@
+packages:
+  - 'packages/*'
+  - 'apps/*'
+
+# Build scripts are opt-in in pnpm. esbuild's postinstall links the native
+# binary that Vite and Vitest run on.
+allowBuilds:
+  esbuild: true

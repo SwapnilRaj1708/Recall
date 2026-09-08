@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Recall",
+  "version": "0.1.0",
+  "identifier": "com.swapnil.recall",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @recall/desktop dev:vite",
+    "devUrl": "http://localhost:5174",
+    "beforeBuildCommand": "pnpm --filter @recall/desktop build:vite",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co; img-src 'self' data: asset: http://asset.localhost; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    },
+    "windows": [
+      {
+        "label": "widget",
+        "title": "Recall widget",
+        "url": "widget.html",
+        "width": 366,
+        "height": 453,
+        "minWidth": 240,
+        "minHeight": 160,
+        "x": 1530,
+        "y": 27,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": true,
+        "visible": true,
+        "focus": false
+      },
+      {
+        "label": "quick",
+        "title": "Quick capture",
+        "url": "quick.html",
+        "width": 560,
+        "height": 68,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "center": true,
+        "visible": false,
+        "focus": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "copyright": "Recall",
+    "category": "Productivity",
+    "shortDescription": "Synchronized external memory",
+    "longDescription": "One task list, always visible on your desktop and synchronized with your browser, phone and the web.",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "displayLanguageSelector": false
+      }
+    }
+  }
+}

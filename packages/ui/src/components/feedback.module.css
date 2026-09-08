@@ -1,0 +1,327 @@
+/* Modals, menus, toasts, and the empty / error / loading states. */
+
+/* ------------------------------------------------------------------- modal */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--rc-space-6);
+  background: var(--rc-scrim);
+  z-index: 100;
+  animation: fade var(--rc-duration-base) var(--rc-ease);
+}
+
+.modal {
+  width: min(440px, 100%);
+  max-height: min(80vh, 640px);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--rc-radius-xl);
+  background: var(--rc-surface-raised);
+  border: var(--rc-border-width) solid var(--rc-border);
+  box-shadow: var(--rc-shadow-lg);
+  animation: rise var(--rc-duration-base) var(--rc-ease);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rc-space-5);
+  padding: var(--rc-space-6) var(--rc-space-6) var(--rc-space-4);
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: var(--rc-text-lg);
+  font-weight: var(--rc-weight-semibold);
+}
+
+.modalBody {
+  padding: 0 var(--rc-space-6) var(--rc-space-6);
+  overflow-y: auto;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--rc-space-4);
+  padding: var(--rc-space-4) var(--rc-space-6) var(--rc-space-6);
+}
+
+/* -------------------------------------------------------------------- menu */
+
+.menuAnchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--rc-space-2));
+  right: 0;
+  min-width: 176px;
+  padding: var(--rc-space-2);
+  border-radius: var(--rc-radius-lg);
+  background: var(--rc-surface-raised);
+  border: var(--rc-border-width) solid var(--rc-border);
+  box-shadow: var(--rc-shadow-lg);
+  z-index: 50;
+  animation: rise var(--rc-duration-fast) var(--rc-ease);
+}
+
+.menuLeft {
+  right: auto;
+  left: 0;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-4);
+  width: 100%;
+  padding: var(--rc-space-3) var(--rc-space-4);
+  border: none;
+  border-radius: var(--rc-radius-sm);
+  background: transparent;
+  color: var(--rc-text);
+  font-size: var(--rc-text-md);
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--rc-surface-hover);
+}
+
+.menuItem:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.menuItemDanger {
+  color: var(--rc-danger);
+}
+
+.menuItemDanger:hover:not(:disabled) {
+  background: var(--rc-danger-soft);
+}
+
+.menuSeparator {
+  height: 1px;
+  margin: var(--rc-space-2) var(--rc-space-3);
+  background: var(--rc-border);
+}
+
+/* ------------------------------------------------------------------ toasts */
+
+.toaster {
+  position: fixed;
+  left: 50%;
+  bottom: var(--rc-space-7);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--rc-space-3);
+  z-index: 200;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-5);
+  max-width: 380px;
+  padding: var(--rc-space-3) var(--rc-space-3) var(--rc-space-3) var(--rc-space-5);
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-surface-raised);
+  border: var(--rc-border-width) solid var(--rc-border);
+  box-shadow: var(--rc-shadow-lg);
+  font-size: var(--rc-text-sm);
+  pointer-events: auto;
+  animation: rise var(--rc-duration-base) var(--rc-ease);
+}
+
+.toastMessage {
+  flex: 1;
+  min-width: 0;
+}
+
+.toastError {
+  border-color: var(--rc-danger);
+  color: var(--rc-danger);
+}
+
+.toastAction {
+  flex-shrink: 0;
+  padding: var(--rc-space-2) var(--rc-space-4);
+  border: none;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-accent-soft);
+  color: var(--rc-accent);
+  font-size: var(--rc-text-sm);
+  font-weight: var(--rc-weight-medium);
+  cursor: pointer;
+}
+
+.toastAction:hover {
+  background: var(--rc-accent);
+  color: var(--rc-accent-contrast);
+}
+
+/* ------------------------------------------------------------------ states */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rc-space-4);
+  padding: var(--rc-space-9) var(--rc-space-6);
+  text-align: center;
+  color: var(--rc-text-secondary);
+}
+
+.stateCompact {
+  padding: var(--rc-space-7) var(--rc-space-5);
+}
+
+.stateIcon {
+  color: var(--rc-text-tertiary);
+  opacity: 0.7;
+}
+
+.stateTitle {
+  font-size: var(--rc-text-md);
+  font-weight: var(--rc-weight-medium);
+  color: var(--rc-text);
+}
+
+.stateBody {
+  max-width: 34ch;
+  font-size: var(--rc-text-sm);
+  line-height: var(--rc-leading-normal);
+}
+
+.stateError .stateIcon {
+  color: var(--rc-danger);
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------- skeleton */
+
+.skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-row-gap);
+  padding: var(--rc-space-2) 0;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-4);
+  height: var(--rc-row-height);
+  padding: 0 var(--rc-space-4);
+}
+
+.skeletonBox {
+  height: 15px;
+  border-radius: var(--rc-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--rc-surface-hover) 25%,
+    var(--rc-surface-active) 37%,
+    var(--rc-surface-hover) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonCheck {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  border-radius: var(--rc-radius-sm);
+}
+
+/* --------------------------------------------------------------- sync badge */
+
+.syncBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  padding: var(--rc-space-1) var(--rc-space-3);
+  border-radius: var(--rc-radius-full);
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+  background: none;
+  border: none;
+  cursor: default;
+  white-space: nowrap;
+}
+
+.syncBadgeButton {
+  cursor: pointer;
+}
+
+.syncBadgeButton:hover {
+  background: var(--rc-surface-hover);
+  color: var(--rc-text-secondary);
+}
+
+.syncBadgeWarn {
+  color: var(--rc-warning);
+}
+
+.syncBadgeError {
+  color: var(--rc-danger);
+}
+
+.spinning {
+  animation: spin 1.1s linear infinite;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--rc-radius-full);
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.dotLive {
+  background: var(--rc-success);
+}
+
+/* ---------------------------------------------------------------- keyframes */
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

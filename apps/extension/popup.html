@@ -1,0 +1,41 @@
+<!doctype html>
+<!--
+  The class on <html> is load-bearing. Vite injects the bundled stylesheet after
+  this file's inline <style>, and that bundle carries the design system's reset
+  (`html, body { height: 100% }`). At equal specificity the later rule wins, so
+  a plain `html { height: 480px }` here is silently overridden — and in a popup,
+  `height: 100%` collapses, leaving Chrome to render a thin strip.
+
+  Qualifying the selector with a class outranks the reset and settles it.
+-->
+<html lang="en" class="rc-popup">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Recall</title>
+    <script src="./theme-bootstrap.js"></script>
+    <style>
+      html.rc-popup,
+      html.rc-popup body,
+      html.rc-popup #root {
+        width: 360px;
+        height: 480px;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      html.rc-popup body {
+        background: #f4f4f6;
+      }
+
+      :root[data-theme='dark'] body,
+      :root[data-theme='system'][data-system-dark='true'] body {
+        background: #0e0e11;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/popup.tsx"></script>
+  </body>
+</html>

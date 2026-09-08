@@ -1,0 +1,169 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-space-7);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-space-4);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--rc-text-xs);
+  font-weight: var(--rc-weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-text-tertiary);
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-space-2);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rc-space-6);
+  min-height: 30px;
+}
+
+.rowLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  font-size: var(--rc-text-md);
+}
+
+.rowHint {
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+}
+
+.value {
+  font-size: var(--rc-text-sm);
+  color: var(--rc-text-secondary);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.buttonRow {
+  display: flex;
+  gap: var(--rc-space-4);
+  padding-top: var(--rc-space-2);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--rc-text-sm);
+  line-height: var(--rc-leading-normal);
+  color: var(--rc-danger);
+}
+
+/* -------------------------------------------------------------- segmented */
+
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--rc-radius-md);
+  background: var(--rc-surface-sunken);
+  border: var(--rc-border-width) solid var(--rc-border);
+}
+
+.segment {
+  padding: var(--rc-space-2) var(--rc-space-4);
+  border: none;
+  border-radius: var(--rc-radius-sm);
+  background: transparent;
+  color: var(--rc-text-secondary);
+  font-size: var(--rc-text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--rc-duration-fast) var(--rc-ease),
+    color var(--rc-duration-fast) var(--rc-ease);
+}
+
+.segmentActive {
+  background: var(--rc-surface-raised);
+  color: var(--rc-text);
+  box-shadow: var(--rc-shadow-sm);
+}
+
+/* --------------------------------------------------------------- swatches */
+
+.swatches {
+  display: flex;
+  gap: var(--rc-space-3);
+}
+
+.swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: var(--rc-radius-full);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
+  cursor: pointer;
+  transition: transform var(--rc-duration-fast) var(--rc-ease);
+}
+
+.swatch:hover {
+  transform: scale(1.12);
+}
+
+.swatchActive {
+  border-color: var(--rc-text);
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 12%),
+    0 0 0 2px var(--rc-bg);
+}
+
+/* ----------------------------------------------------------------- slider */
+
+.sliderGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-4);
+}
+
+.slider {
+  width: 132px;
+  height: 4px;
+  appearance: none;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-border-strong);
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-accent);
+  box-shadow: var(--rc-shadow-sm);
+  cursor: grab;
+}
+
+.slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: none;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-accent);
+  cursor: grab;
+}
+
+.sliderValue {
+  min-width: 42px;
+  font-size: var(--rc-text-sm);
+  color: var(--rc-text-secondary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

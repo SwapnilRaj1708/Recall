@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Recall widget</title>
+    <script src="/theme-bootstrap.js"></script>
+    <style>
+      /*
+       * The window itself is transparent, so nothing here may paint a
+       * background — the rounded, translucent panel is drawn by the widget
+       * component, and any opaque ancestor would square off its corners.
+       */
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+        background: transparent;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/widget.tsx"></script>
+  </body>
+</html>

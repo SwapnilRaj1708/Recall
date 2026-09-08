@@ -1,0 +1,40 @@
+{
+  "name": "recall",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Recall — a synchronized external-memory task system for Windows, Chrome, and the web.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @recall/web dev",
+    "dev:web": "pnpm --filter @recall/web dev",
+    "dev:desktop": "pnpm --filter @recall/desktop dev",
+    "dev:extension": "pnpm --filter @recall/extension dev",
+    "build": "pnpm -r --filter \"./apps/*\" build",
+    "build:web": "pnpm --filter @recall/web build",
+    "build:desktop": "pnpm --filter @recall/desktop build",
+    "build:extension": "pnpm --filter @recall/extension build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "rimraf \"**/dist\" \"**/.turbo\" \"**/*.tsbuildinfo\"",
+    "dev:demo": "pnpm --filter @recall/web dev:demo",
+    "test:live": "node scripts/live-check.mjs",
+    "icons": "node scripts/generate-icons.mjs",
+    "ext:key": "node scripts/generate-extension-key.mjs",
+    "scan": "node scripts/scan-bundles.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@supabase/supabase-js": "^2.48.1"
+  }
+}

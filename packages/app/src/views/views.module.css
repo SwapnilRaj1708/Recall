@@ -1,0 +1,235 @@
+/* ------------------------------------------------------------- full window */
+
+.full {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--rc-bg);
+}
+
+.fullHeader {
+  flex-shrink: 0;
+  padding: var(--rc-space-4) var(--rc-space-5);
+  border-bottom: var(--rc-border-width) solid var(--rc-border);
+  background: var(--rc-surface-raised);
+}
+
+/*
+ * The header bar spans the window, but its contents share the list's column so
+ * the title lines up with the tasks below it instead of floating off in the
+ * corner on a wide screen.
+ */
+.fullHeaderInner {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-5);
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  flex-shrink: 0;
+}
+
+.brandTitle {
+  margin: 0;
+  font-size: var(--rc-text-lg);
+  font-weight: var(--rc-weight-semibold);
+  letter-spacing: -0.01em;
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-accent-soft);
+  color: var(--rc-accent);
+  font-size: var(--rc-text-xs);
+  font-weight: var(--rc-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.search {
+  flex: 1;
+  max-width: 300px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.fullBody {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--rc-space-4) var(--rc-space-4) 0;
+}
+
+/* ------------------------------------------------------------------ widget */
+
+.widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  /* Rounded on all sides: the window itself is transparent behind it. */
+  border-radius: var(--rc-radius-lg);
+  box-shadow: var(--rc-shadow-lg);
+  overflow: hidden;
+}
+
+.widgetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rc-space-4);
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0 var(--rc-space-2) 0 var(--rc-space-5);
+  /* The whole strip is the drag handle, so it must not select on double-click. */
+  user-select: none;
+  /* A move cursor is the only affordance a frameless window gets. */
+  cursor: grab;
+}
+
+.widgetHeader:active {
+  cursor: grabbing;
+}
+
+.widgetTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  font-size: var(--rc-text-xs);
+  font-weight: var(--rc-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rc-text-tertiary);
+}
+
+.widgetHeader .count {
+  letter-spacing: 0;
+}
+
+.widgetHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-1);
+}
+
+/*
+ * The widget's only chrome is a 30px strip, so its controls sit at tertiary
+ * contrast to stay quiet. That is too quiet to find on first use — they lift
+ * to full contrast as soon as the pointer is anywhere over the widget.
+ */
+.widget:hover .widgetHeaderActions button {
+  color: var(--rc-text-secondary);
+}
+
+/* Pinned is a state worth seeing without hovering or opening anything. */
+.pinActive,
+.widget:hover .widgetHeaderActions button.pinActive {
+  color: var(--rc-accent);
+  background: var(--rc-accent-soft);
+}
+
+.widgetBody {
+  flex: 1;
+  min-height: 0;
+}
+
+.widgetFooter {
+  flex-shrink: 0;
+  padding: var(--rc-space-2) var(--rc-space-4);
+  border-top: var(--rc-border-width) solid var(--rc-border);
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+}
+
+/* ----------------------------------------------------------- quick capture */
+
+.quickCapture {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-5);
+  height: 100%;
+  padding: 0 var(--rc-space-5) 0 var(--rc-space-6);
+  border-radius: var(--rc-radius-xl);
+  box-shadow: var(--rc-shadow-lg);
+}
+
+.quickCaptureIcon {
+  display: flex;
+  align-items: center;
+  color: var(--rc-accent);
+  flex-shrink: 0;
+}
+
+.quickCaptureInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--rc-text-xl);
+  color: var(--rc-text);
+}
+
+.quickCaptureInput::placeholder {
+  color: var(--rc-text-tertiary);
+}
+
+.quickCaptureHint {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-2);
+  flex-shrink: 0;
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+}
+
+/* ---------------------------------------------------------- extension popup */
+
+/*
+ * Fills whatever the host page declares rather than restating a size. The
+ * extension's popup.html owns the dimensions, because Chrome measures the
+ * document — not this element — when it decides how big to draw the popup.
+ */
+.popup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--rc-bg);
+}
+
+.popupHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rc-space-4);
+  flex-shrink: 0;
+  padding: var(--rc-space-4) var(--rc-space-3) var(--rc-space-3) var(--rc-space-5);
+  border-bottom: var(--rc-border-width) solid var(--rc-border);
+}
+
+.popupBody {
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--rc-space-3);
+}

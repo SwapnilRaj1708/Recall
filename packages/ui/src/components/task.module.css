@@ -1,0 +1,212 @@
+/*
+ * The task row is the centre of the product, so it gets the most care and the
+ * least decoration. Everything that is not the text of the task recedes until
+ * the row is hovered or focused.
+ */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-row-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-4);
+  min-height: var(--rc-row-height);
+  padding: 0 var(--rc-space-3) 0 var(--rc-space-4);
+  border-radius: var(--rc-radius-md);
+  background: transparent;
+  transition: background-color var(--rc-duration-fast) var(--rc-ease);
+}
+
+.row:hover,
+.row:focus-within {
+  background: var(--rc-surface-hover);
+}
+
+.rowDragging {
+  opacity: 0.4;
+}
+
+.rowDropBefore {
+  box-shadow: inset 0 2px 0 -0.5px var(--rc-accent);
+}
+
+.rowDropAfter {
+  box-shadow: inset 0 -2px 0 -0.5px var(--rc-accent);
+}
+
+/* The handle only appears on hover, so a resting list is just text. */
+.handle {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  margin-left: calc(var(--rc-space-4) * -1);
+  padding: 0 1px;
+  color: var(--rc-text-tertiary);
+  opacity: 0;
+  cursor: grab;
+  transition: opacity var(--rc-duration-fast) var(--rc-ease);
+}
+
+.row:hover .handle,
+.row:focus-within .handle {
+  opacity: 0.7;
+}
+
+.handle:active {
+  cursor: grabbing;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  padding: var(--rc-space-3) 0;
+  font-size: var(--rc-text-md);
+  line-height: var(--rc-leading-tight);
+  color: var(--rc-text);
+  text-align: left;
+  overflow-wrap: anywhere;
+  background: none;
+  border: none;
+  cursor: text;
+}
+
+/* One line in the widget, where vertical space is the scarce resource. */
+.textClamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.textCompleted {
+  color: var(--rc-text-tertiary);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.editInput {
+  flex: 1;
+  min-width: 0;
+  padding: var(--rc-space-3) var(--rc-space-3);
+  margin: 0 calc(var(--rc-space-3) * -1);
+  border: var(--rc-border-width) solid var(--rc-accent);
+  border-radius: var(--rc-radius-sm);
+  background: var(--rc-surface-raised);
+  font-size: var(--rc-text-md);
+  line-height: var(--rc-leading-tight);
+  color: var(--rc-text);
+  outline: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-1);
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--rc-duration-fast) var(--rc-ease);
+}
+
+.row:hover .actions,
+.row:focus-within .actions {
+  opacity: 1;
+}
+
+/* Touch and keyboard users never get a hover, so actions stay visible. */
+@media (hover: none) {
+  .actions,
+  .handle {
+    opacity: 1;
+  }
+}
+
+.meta {
+  flex-shrink: 0;
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------- quick add */
+
+.quickAdd {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-4);
+  min-height: var(--rc-row-height);
+  padding: 0 var(--rc-space-3) 0 var(--rc-space-4);
+  border-radius: var(--rc-radius-md);
+  transition: background-color var(--rc-duration-fast) var(--rc-ease);
+}
+
+.quickAddIcon {
+  display: flex;
+  align-items: center;
+  color: var(--rc-text-tertiary);
+  flex-shrink: 0;
+}
+
+.quickAddInput {
+  flex: 1;
+  min-width: 0;
+  padding: var(--rc-space-3) 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: var(--rc-text-md);
+  line-height: var(--rc-leading-tight);
+  color: var(--rc-text);
+}
+
+.quickAddInput::placeholder {
+  color: var(--rc-text-tertiary);
+}
+
+.quickAdd:focus-within {
+  background: var(--rc-surface-hover);
+}
+
+.quickAdd:focus-within .quickAddIcon {
+  color: var(--rc-accent);
+}
+
+.quickAddHint {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--rc-duration-fast) var(--rc-ease);
+}
+
+.quickAdd:focus-within .quickAddHint {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------- sections */
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  padding: var(--rc-space-5) var(--rc-space-4) var(--rc-space-3);
+  font-size: var(--rc-text-xs);
+  font-weight: var(--rc-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rc-text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.sectionCount {
+  font-weight: var(--rc-weight-normal);
+  letter-spacing: 0;
+  text-transform: none;
+}

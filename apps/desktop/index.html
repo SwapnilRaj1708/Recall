@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Recall</title>
+    <script src="/theme-bootstrap.js"></script>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: #f4f4f6;
+      }
+
+      :root[data-theme='dark'] body,
+      :root[data-theme='system'][data-system-dark='true'] body {
+        background: #0e0e11;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

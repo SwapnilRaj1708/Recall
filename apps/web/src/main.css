@@ -1,0 +1,17 @@
+/*
+ * Web-specific shell styling. Everything visual beyond this lives in the design
+ * system; this file only handles what is genuinely browser-specific.
+ */
+
+#root {
+  height: 100%;
+}
+
+/* Keep the layout clear of the notch and the home indicator on a phone. */
+@supports (padding: env(safe-area-inset-top)) {
+  #root {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    box-sizing: border-box;
+  }
+}

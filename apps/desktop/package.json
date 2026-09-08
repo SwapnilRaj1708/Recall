@@ -1,0 +1,29 @@
+{
+  "name": "@recall/desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "dev:vite": "vite",
+    "build": "tauri build",
+    "build:vite": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "tauri": "tauri",
+    "dev:vite:demo": "vite --mode demo"
+  },
+  "dependencies": {
+    "@recall/app": "workspace:*",
+    "@recall/core": "workspace:*",
+    "@recall/ui": "workspace:*",
+    "@tauri-apps/api": "^2.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@tauri-apps/plugin-opener": "^2.2.5"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.2.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7"
+  }
+}

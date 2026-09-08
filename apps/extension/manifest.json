@@ -1,0 +1,54 @@
+{
+  "manifest_version": 3,
+  "name": "Recall",
+  "short_name": "Recall",
+  "version": "0.1.0",
+  "description": "One task list, on every screen you use. Capture a thought in two keystrokes.",
+  "minimum_chrome_version": "116",
+  "action": {
+    "default_title": "Recall",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "omnibox": {
+    "keyword": "r"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "identity",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://*.supabase.co/*"
+  ],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
+      "description": "Open Recall"
+    }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqrTGc+CdP3SjlfSYbIIWT2K/Wjahpcb7ooVUKLy0gCKZJn8+szAYgSTRgAPhvEBuqwIzSOf31z+O1Eox/8iUmmWQDjAbkEWTc/xAfIrrRrD1pME3kIErFtRqBBDuAMy5Wf5U1NRynaWWQavrMyPY0jEso362QL1TU4PqwMaXnJ2lCO7u1hsg9s9IT4Gw2sYuSuxbOHE/Tt29f6ASIv+vdz0WDHyVnaD56su3yIev9r8pyWJ8yelKPuYoinuwU5vxbEIjFkDRZOZ3e0KjHNC98hFlHzAu5UbKopupKnfuK8Dag1xaGLIC4ROcM3LXQnLdrrO53eY2tmz+z5tww5Z7OwIDAQAB"
+}

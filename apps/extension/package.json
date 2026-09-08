@@ -1,0 +1,24 @@
+{
+  "name": "@recall/extension",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite build --watch --mode development",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "key": "node ../../scripts/generate-extension-key.mjs"
+  },
+  "dependencies": {
+    "@recall/app": "workspace:*",
+    "@recall/core": "workspace:*",
+    "@recall/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7"
+  }
+}

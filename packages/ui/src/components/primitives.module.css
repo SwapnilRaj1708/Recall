@@ -1,0 +1,303 @@
+/* Buttons, inputs, checkboxes, surfaces — the shared vocabulary. */
+
+.surface {
+  background: var(--rc-surface);
+  border: var(--rc-border-width) solid var(--rc-border);
+  border-radius: var(--rc-radius-lg);
+  box-shadow: var(--rc-shadow-sm);
+}
+
+.surfaceRaised {
+  box-shadow: var(--rc-shadow-md);
+}
+
+.surfaceFlat {
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ button */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--rc-space-3);
+  height: var(--rc-control-height);
+  padding: 0 var(--rc-space-5);
+  border: var(--rc-border-width) solid transparent;
+  border-radius: var(--rc-radius-md);
+  background: transparent;
+  color: var(--rc-text);
+  font-size: var(--rc-text-md);
+  font-weight: var(--rc-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--rc-duration-fast) var(--rc-ease),
+    border-color var(--rc-duration-fast) var(--rc-ease),
+    opacity var(--rc-duration-fast) var(--rc-ease);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.sizeSm {
+  height: var(--rc-control-height-sm);
+  padding: 0 var(--rc-space-4);
+  font-size: var(--rc-text-sm);
+}
+
+.sizeLg {
+  height: 38px;
+  padding: 0 var(--rc-space-6);
+  font-size: var(--rc-text-lg);
+}
+
+.primary {
+  background: var(--rc-accent);
+  color: var(--rc-accent-contrast);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--rc-accent-strong);
+}
+
+.secondary {
+  background: var(--rc-surface-raised);
+  border-color: var(--rc-border);
+  box-shadow: var(--rc-shadow-sm);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--rc-surface-hover);
+}
+
+.ghost {
+  color: var(--rc-text-secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--rc-surface-hover);
+  color: var(--rc-text);
+}
+
+.danger {
+  color: var(--rc-danger);
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--rc-danger-soft);
+}
+
+.block {
+  width: 100%;
+}
+
+/* ------------------------------------------------------------- icon button */
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--rc-control-height-sm);
+  height: var(--rc-control-height-sm);
+  padding: 0;
+  border: none;
+  border-radius: var(--rc-radius-sm);
+  background: transparent;
+  color: var(--rc-text-tertiary);
+  cursor: pointer;
+  transition:
+    background-color var(--rc-duration-fast) var(--rc-ease),
+    color var(--rc-duration-fast) var(--rc-ease);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--rc-surface-hover);
+  color: var(--rc-text);
+}
+
+.iconButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.iconButtonDanger:hover:not(:disabled) {
+  background: var(--rc-danger-soft);
+  color: var(--rc-danger);
+}
+
+/* ------------------------------------------------------------------- input */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-space-3);
+}
+
+.label {
+  font-size: var(--rc-text-sm);
+  font-weight: var(--rc-weight-medium);
+  color: var(--rc-text-secondary);
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-4);
+  height: var(--rc-control-height);
+  padding: 0 var(--rc-space-4);
+  border: var(--rc-border-width) solid var(--rc-border);
+  border-radius: var(--rc-radius-md);
+  background: var(--rc-surface-raised);
+  transition:
+    border-color var(--rc-duration-fast) var(--rc-ease),
+    box-shadow var(--rc-duration-fast) var(--rc-ease);
+}
+
+.inputWrap:focus-within {
+  border-color: var(--rc-accent);
+  box-shadow: 0 0 0 3px var(--rc-accent-soft);
+}
+
+.inputWrapSeamless {
+  border-color: transparent;
+  background: transparent;
+}
+
+.inputWrapSeamless:focus-within {
+  border-color: transparent;
+  background: var(--rc-surface-hover);
+  box-shadow: none;
+}
+
+.inputLarge {
+  height: 40px;
+  font-size: var(--rc-text-lg);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: inherit;
+  color: var(--rc-text);
+}
+
+.input::placeholder {
+  color: var(--rc-text-tertiary);
+}
+
+.adornment {
+  display: flex;
+  align-items: center;
+  color: var(--rc-text-tertiary);
+  flex-shrink: 0;
+}
+
+.hint {
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+}
+
+.hintError {
+  color: var(--rc-danger);
+}
+
+/* ---------------------------------------------------------------- checkbox */
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1.5px solid var(--rc-border-strong);
+  border-radius: var(--rc-radius-sm);
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--rc-duration-fast) var(--rc-ease),
+    border-color var(--rc-duration-fast) var(--rc-ease),
+    color var(--rc-duration-fast) var(--rc-ease);
+}
+
+.checkbox:hover:not(:disabled) {
+  border-color: var(--rc-accent);
+}
+
+.checkboxChecked {
+  background: var(--rc-accent);
+  border-color: var(--rc-accent);
+  color: var(--rc-accent-contrast);
+}
+
+.checkbox svg {
+  transform: scale(0.85);
+}
+
+/* --------------------------------------------------------------------- kbd */
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border: var(--rc-border-width) solid var(--rc-border);
+  border-bottom-width: 2px;
+  border-radius: var(--rc-radius-sm);
+  background: var(--rc-surface-sunken);
+  color: var(--rc-text-secondary);
+  font-family: inherit;
+  font-size: var(--rc-text-xs);
+  font-weight: var(--rc-weight-medium);
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------------ switch */
+
+.switch {
+  position: relative;
+  width: 34px;
+  height: 19px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-border-strong);
+  cursor: pointer;
+  transition: background-color var(--rc-duration-fast) var(--rc-ease);
+}
+
+.switchOn {
+  background: var(--rc-accent);
+}
+
+.switchThumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: var(--rc-radius-full);
+  background: #fff;
+  box-shadow: var(--rc-shadow-sm);
+  transition: transform var(--rc-duration-fast) var(--rc-ease);
+}
+
+.switchOn .switchThumb {
+  transform: translateX(15px);
+}
+
+.switch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

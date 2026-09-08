@@ -1,0 +1,272 @@
+/*
+ * Recall design tokens.
+ *
+ * Every visual decision in the product resolves to a variable defined here, so
+ * a request like "make the task rows taller, reduce the transparency, change
+ * the accent colour" is three edits in this file rather than a hunt through
+ * four applications. Components must never hard-code a colour, radius, or
+ * spacing value.
+ *
+ * The tokens marked "tunable at runtime" are also writable from the settings
+ * screen, which sets them as inline styles on the root element.
+ */
+
+:root {
+  /* ---------------------------------------------------------------- type */
+  --rc-font-sans:
+    'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter',
+    system-ui, sans-serif;
+
+  /* Tunable at runtime: scales the whole interface. */
+  --rc-font-scale: 1;
+
+  --rc-text-xs: calc(11px * var(--rc-font-scale));
+  --rc-text-sm: calc(12px * var(--rc-font-scale));
+  --rc-text-md: calc(13.5px * var(--rc-font-scale));
+  --rc-text-lg: calc(15px * var(--rc-font-scale));
+  --rc-text-xl: calc(19px * var(--rc-font-scale));
+
+  --rc-weight-normal: 400;
+  --rc-weight-medium: 500;
+  --rc-weight-semibold: 600;
+
+  --rc-leading-tight: 1.3;
+  --rc-leading-normal: 1.5;
+
+  /* -------------------------------------------------------------- spacing */
+  --rc-space-1: 2px;
+  --rc-space-2: 4px;
+  --rc-space-3: 6px;
+  --rc-space-4: 8px;
+  --rc-space-5: 12px;
+  --rc-space-6: 16px;
+  --rc-space-7: 20px;
+  --rc-space-8: 24px;
+  --rc-space-9: 32px;
+  --rc-space-10: 40px;
+
+  /* --------------------------------------------------------------- shape */
+  --rc-radius-sm: 5px;
+  --rc-radius-md: 8px;
+  --rc-radius-lg: 12px;
+  --rc-radius-xl: 16px;
+  --rc-radius-full: 999px;
+
+  --rc-border-width: 1px;
+
+  /* Tunable at runtime: the single most-requested density control. */
+  --rc-row-height: 34px;
+  --rc-row-gap: 1px;
+  --rc-control-height: 30px;
+  --rc-control-height-sm: 24px;
+
+  /* --------------------------------------------------------------- motion */
+  /* Deliberately short. Motion here is feedback, never decoration. */
+  --rc-duration-fast: 110ms;
+  --rc-duration-base: 170ms;
+  --rc-ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* --------------------------------------------------------------- accent */
+  /* Tunable at runtime. Everything else derives from these three. */
+  --rc-accent: #5b5bd6;
+  --rc-accent-strong: #4a4ac2;
+  --rc-accent-contrast: #ffffff;
+  --rc-accent-soft: color-mix(in srgb, var(--rc-accent) 13%, transparent);
+  --rc-accent-ring: color-mix(in srgb, var(--rc-accent) 40%, transparent);
+
+  /* -------------------------------------------------------- light palette */
+  --rc-bg: #f4f4f6;
+  --rc-surface-base: 255 255 255;
+  --rc-surface-raised: #ffffff;
+  --rc-surface-sunken: #ececf0;
+  --rc-surface-hover: rgb(0 0 0 / 4%);
+  --rc-surface-active: rgb(0 0 0 / 7%);
+
+  --rc-text: #1b1b20;
+  --rc-text-secondary: #63636e;
+  --rc-text-tertiary: #90909c;
+  --rc-text-inverse: #ffffff;
+
+  --rc-border: rgb(0 0 0 / 9%);
+  --rc-border-strong: rgb(0 0 0 / 22%);
+
+  --rc-danger: #d1343c;
+  --rc-danger-soft: rgb(209 52 60 / 12%);
+  --rc-success: #2f8f5b;
+  --rc-warning: #b4741a;
+
+  /* Overlay scrim. Dark mode needs far more of it: a 30% black over a near
+     black background barely reads as a dim at all. */
+  --rc-scrim: rgb(0 0 0 / 30%);
+
+  --rc-shadow-sm: 0 1px 2px rgb(0 0 0 / 6%);
+  --rc-shadow-md: 0 4px 12px rgb(0 0 0 / 10%), 0 1px 2px rgb(0 0 0 / 6%);
+  --rc-shadow-lg: 0 12px 32px rgb(0 0 0 / 16%), 0 2px 6px rgb(0 0 0 / 8%);
+
+  /*
+   * Tunable at runtime. 1 is fully opaque; the widget lowers it so the desktop
+   * shows through. Kept as a bare number so surfaces can compose it with
+   * their own colour.
+   */
+  --rc-surface-alpha: 1;
+  --rc-backdrop-blur: 24px;
+  --rc-surface: rgb(var(--rc-surface-base) / var(--rc-surface-alpha));
+
+  color-scheme: light;
+}
+
+/*
+ * Dark palette. Applied by an explicit [data-theme="dark"] and by the system
+ * preference when no explicit choice has been made, so "system" genuinely
+ * follows the OS.
+ */
+:root[data-theme='dark'],
+:root[data-theme='system'][data-system-dark='true'] {
+  --rc-bg: #0e0e11;
+  --rc-surface-base: 26 26 31;
+  --rc-surface-raised: #232329;
+  --rc-surface-sunken: #17171b;
+  --rc-surface-hover: rgb(255 255 255 / 6%);
+  --rc-surface-active: rgb(255 255 255 / 10%);
+
+  --rc-text: #eaeaef;
+  --rc-text-secondary: #a0a0ad;
+  --rc-text-tertiary: #6e6e7b;
+  --rc-text-inverse: #14141a;
+
+  --rc-border: rgb(255 255 255 / 10%);
+  --rc-border-strong: rgb(255 255 255 / 18%);
+
+  --rc-accent: #7f7ff0;
+  --rc-accent-strong: #9494f5;
+  --rc-accent-contrast: #12121a;
+
+  --rc-danger: #f2646c;
+  --rc-danger-soft: rgb(242 100 108 / 16%);
+  --rc-success: #57c98a;
+  --rc-warning: #dfa24a;
+
+  --rc-scrim: rgb(0 0 0 / 62%);
+
+  --rc-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --rc-shadow-md: 0 4px 14px rgb(0 0 0 / 45%), 0 1px 2px rgb(0 0 0 / 30%);
+  --rc-shadow-lg: 0 16px 40px rgb(0 0 0 / 55%), 0 2px 8px rgb(0 0 0 / 35%);
+
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------------ reset */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--rc-font-sans);
+  font-size: var(--rc-text-md);
+  line-height: var(--rc-leading-normal);
+  color: var(--rc-text);
+  background: var(--rc-bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* A single, consistent focus treatment. Never removed — only restyled. */
+:focus-visible {
+  outline: 2px solid var(--rc-accent-ring);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Respect the OS setting rather than insisting on our own motion. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rc-duration-fast: 0ms;
+    --rc-duration-base: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------- surfaces */
+
+/*
+ * The translucent panel used by the widget and by overlays. Falls back to an
+ * opaque surface where backdrop-filter is unsupported, so text never lands on
+ * bare desktop wallpaper.
+ */
+.rc-glass {
+  background: var(--rc-surface);
+  border: var(--rc-border-width) solid var(--rc-border);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .rc-glass {
+    -webkit-backdrop-filter: blur(var(--rc-backdrop-blur)) saturate(160%);
+    backdrop-filter: blur(var(--rc-backdrop-blur)) saturate(160%);
+  }
+}
+
+/* Scrollbars that do not shout. */
+.rc-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rc-border-strong) transparent;
+}
+
+.rc-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rc-scroll::-webkit-scrollbar-thumb {
+  background: var(--rc-border-strong);
+  border-radius: var(--rc-radius-full);
+}
+
+.rc-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* An icon button that is currently "on". Shared so toggles look the same everywhere. */
+.rc-toggle-on {
+  color: var(--rc-accent) !important;
+  background: var(--rc-accent-soft);
+}
+
+/* Screen-reader-only text, for icon-only controls. */
+.rc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

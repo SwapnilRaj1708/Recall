@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="One task list, on every screen you use." />
+    <meta name="theme-color" content="#5b5bd6" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <title>Recall</title>
+
+    <script>
+      /*
+       * Apply the saved theme before the first paint.
+       *
+       * Preferences live in localStorage precisely so this can be synchronous;
+       * reading them asynchronously would flash the wrong colours every single
+       * time the app opens, which is exactly the sort of small ugliness that
+       * makes a tool feel unreliable.
+       */
+      (function () {
+        try {
+          var raw = localStorage.getItem('recall.preferences.web');
+          var theme = raw ? (JSON.parse(raw).theme || {}) : {};
+          var mode = theme.mode || 'system';
+          var root = document.documentElement;
+
+          root.dataset.theme = mode;
+          if (mode === 'system') {
+            root.dataset.systemDark = String(
+              window.matchMedia('(prefers-color-scheme: dark)').matches,
+            );
+          }
+          if (theme.accent) root.style.setProperty('--rc-accent', theme.accent);
+          if (theme.rowHeight) root.style.setProperty('--rc-row-height', theme.rowHeight + 'px');
+          if (theme.fontScale) root.style.setProperty('--rc-font-scale', String(theme.fontScale));
+          if (theme.surfaceAlpha) {
+            root.style.setProperty('--rc-surface-alpha', String(theme.surfaceAlpha));
+          }
+        } catch (error) {
+          /* Blocked storage is not a reason to fail to render. */
+        }
+      })();
+    </script>
+
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+      }
+
+      /* Painted before the stylesheet loads, so there is no white flash in dark mode. */
+      body {
+        margin: 0;
+        background: #f4f4f6;
+      }
+
+      :root[data-theme='dark'] body,
+      :root[data-theme='system'][data-system-dark='true'] body {
+        background: #0e0e11;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,63 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
+.capture {
+  flex-shrink: 0;
+  margin: 0 var(--rc-space-3);
+}
+
+.containerCompact .capture {
+  margin: 0 var(--rc-space-2);
+}
+
+/*
+ * A hairline under the capture field, so the field reads as fixed and the list
+ * as the thing that scrolls beneath it.
+ */
+.capture::after {
+  content: none;
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  padding: var(--rc-space-2) var(--rc-space-3) var(--rc-space-4);
+  border-top: var(--rc-border-width) solid var(--rc-border);
+  margin-top: var(--rc-space-2);
+}
+
+.containerCompact .scroller {
+  padding: var(--rc-space-1) var(--rc-space-2) var(--rc-space-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--rc-row-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  padding: var(--rc-space-6) var(--rc-space-4) var(--rc-space-2);
+  font-size: var(--rc-text-xs);
+  font-weight: var(--rc-weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--rc-text-tertiary);
+}
+
+.sectionCount {
+  font-weight: var(--rc-weight-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0.8;
+}
