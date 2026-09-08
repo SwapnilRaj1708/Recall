@@ -12,8 +12,15 @@ build/
 !.env.demo
 
 # Tauri
-apps/desktop/src-tauri/target/
+apps/*/src-tauri/target/
 apps/desktop/src-tauri/gen/
+
+# The Android project under apps/mobile is source we edit by hand — the
+# home-screen widget lives in it — so it is committed. Its generated
+# permission schemas and Gradle scratch are not.
+apps/mobile/src-tauri/gen/schemas/
+apps/mobile/src-tauri/gen/android/.tauri/
+apps/mobile/src-tauri/gen/android/app/src/main/assets/
 
 # Extension packaging
 apps/extension/*.zip

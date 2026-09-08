@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "default",
+  "description": "The phone app is a single window. It needs to open the Google consent screen in the real browser and to receive the deep link that brings the result back.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "opener:default",
+    "deep-link:default"
+  ]
+}

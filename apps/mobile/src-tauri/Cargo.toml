@@ -1,0 +1,30 @@
+[package]
+name = "recall-mobile"
+version = "0.1.0"
+description = "One task list, on every screen you use."
+authors = ["Swapnil"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "recall_mobile_lib"
+# cdylib is what Android loads; the Tauri mobile entry point lives in the lib
+# rather than in main.rs, because Android starts the process, not us.
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-deep-link = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true
