@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_PREFERENCES,
   THEME_KEY,
+  THEME_VERSION,
   keyFor,
   loadPreferences,
   savePreferences,
@@ -141,6 +142,65 @@ describe('migration from per-surface themes', () => {
     );
     store.setItem(THEME_KEY, JSON.stringify({ ...DEFAULT_THEME, accent: '#c2415f' }));
     expect(loadPreferences('desktop').theme.accent).toBe('#c2415f');
+  });
+});
+
+describe('migration to the denser rows', () => {
+  /*
+   * The old default row height. Every v1 record carried it, because a save
+   * wrote the whole theme whether the slider had been touched or not — so the
+   * denser default would never have reached an install that had, say, once
+   * changed the accent.
+   */
+  const OLD_ROW_HEIGHT = 34;
+
+  it('lets the new default through a v1 record that still holds the old one', () => {
+    store.setItem(THEME_KEY, JSON.stringify({ ...DEFAULT_THEME, accent: '#0f8b8d', rowHeight: OLD_ROW_HEIGHT }));
+    const theme = loadPreferences('desktop').theme;
+    expect(theme.rowHeight).toBe(DEFAULT_THEME.rowHeight);
+    // Everything else in the record was a choice, and stays one.
+    expect(theme.accent).toBe('#0f8b8d');
+  });
+
+  it('keeps a v1 row height that was plainly chosen', () => {
+    store.setItem(THEME_KEY, JSON.stringify({ ...DEFAULT_THEME, rowHeight: 46 }));
+    expect(loadPreferences('desktop').theme.rowHeight).toBe(46);
+  });
+
+  it('migrates the legacy inline copy by the same rule', () => {
+    store.setItem(
+      keyFor('desktop'),
+      JSON.stringify({ ...DEFAULT_PREFERENCES, theme: { ...DEFAULT_THEME, rowHeight: OLD_ROW_HEIGHT } }),
+    );
+    expect(loadPreferences('desktop').theme.rowHeight).toBe(DEFAULT_THEME.rowHeight);
+  });
+
+  it('rewrites the record at the current version, so it migrates exactly once', () => {
+    // The pre-paint bootstraps read the record without migrating it; left as
+    // v1 it would paint the old layout for a frame on every open.
+    store.setItem(THEME_KEY, JSON.stringify({ ...DEFAULT_THEME, rowHeight: OLD_ROW_HEIGHT }));
+    loadPreferences('desktop');
+    const written = JSON.parse(store.getItem(THEME_KEY)!) as { version: number; rowHeight: number };
+    expect(written.version).toBe(THEME_VERSION);
+    expect(written.rowHeight).toBe(DEFAULT_THEME.rowHeight);
+  });
+
+  it('honours the old value once it has been chosen against the new defaults', () => {
+    // Someone who prefers the roomier rows sets the slider back to 34. That is
+    // a choice now, and must not be migrated away on the next launch.
+    savePreferences('desktop', {
+      ...DEFAULT_PREFERENCES,
+      theme: { ...DEFAULT_THEME, rowHeight: OLD_ROW_HEIGHT },
+    });
+    expect(loadPreferences('desktop').theme.rowHeight).toBe(OLD_ROW_HEIGHT);
+    expect(loadPreferences('widget').theme.rowHeight).toBe(OLD_ROW_HEIGHT);
+  });
+
+  it('leaves a current record alone', () => {
+    const record = { ...DEFAULT_THEME, accent: '#c2415f', version: THEME_VERSION };
+    store.setItem(THEME_KEY, JSON.stringify(record));
+    loadPreferences('desktop');
+    expect(JSON.parse(store.getItem(THEME_KEY)!)).toEqual(record);
   });
 });
 

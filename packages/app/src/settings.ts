@@ -49,6 +49,42 @@ const STORAGE_KEY = 'recall.preferences';
 /** One appearance record for every window on the machine. */
 export const THEME_KEY = `${STORAGE_KEY}.theme`;
 
+/**
+ * The appearance record on disk: the theme plus the version of the defaults it
+ * was saved against. Every save writes the whole theme, chosen or not, so
+ * without the version a later change to a default could not tell "never
+ * touched" from "picked exactly the old default" — and would be pinned out of
+ * every existing install by the very record it was meant to change.
+ */
+interface StoredTheme extends Partial<ThemeSettings> {
+  version?: number;
+}
+
+export const THEME_VERSION = 2;
+
+/** The row height every record before v2 carried, whether or not it was a choice. */
+const ROW_HEIGHT_BEFORE_V2 = 34;
+
+/**
+ * Bring a stored record up to the current defaults.
+ *
+ * v2 made every row denser. A v1 record still holding the old default row
+ * height is overwhelmingly one that was never adjusted, so that field is
+ * dropped and the new default applies; anything else in it was a choice and
+ * stays. A record already at v2 is returned as it is — someone who later sets
+ * the slider to the old value gets exactly that.
+ */
+function migrateTheme(stored: StoredTheme | null | undefined): Partial<ThemeSettings> | null {
+  if (!stored) return null;
+  if ((stored.version ?? 1) >= THEME_VERSION) return stored;
+  const { rowHeight, ...rest } = stored;
+  return rowHeight === ROW_HEIGHT_BEFORE_V2 ? rest : stored;
+}
+
+function storedTheme(theme: ThemeSettings): StoredTheme {
+  return { ...normalizeTheme(theme), version: THEME_VERSION };
+}
+
 /** Host settings get a slot per surface — the widget's autostart is not the web app's. */
 export function keyFor(surface: string): string {
   return `${STORAGE_KEY}.${surface}`;
@@ -77,21 +113,27 @@ function writeJson(key: string, value: unknown): void {
 
 export function loadPreferences(surface: string): Preferences {
   const host = readJson<Preferences>(keyFor(surface));
-  const shared = readJson<ThemeSettings>(THEME_KEY);
+  const stored = readJson<StoredTheme>(THEME_KEY);
 
   // Records written before the theme was shared still carry one inline. Honour
   // it so an existing customisation is not silently reset — except the
   // widget's, which was never a choice but the denser defaults it used to be
   // seeded with, and would now re-theme every other window.
   const legacy =
-    surface === 'widget' ? undefined : (host?.theme as Partial<ThemeSettings> | undefined);
+    surface === 'widget' ? undefined : (host?.theme as StoredTheme | undefined);
 
-  const theme = normalizeTheme({ ...DEFAULT_THEME, ...legacy, ...shared });
+  const theme = normalizeTheme({
+    ...DEFAULT_THEME,
+    ...migrateTheme(legacy),
+    ...migrateTheme(stored),
+  });
 
-  // Promote it for real, once. Returning the value without writing it would
-  // leave the other windows on defaults until the user happened to change a
-  // setting, which is exactly the disconnect this split exists to remove.
-  if (!shared && legacy) writeJson(THEME_KEY, theme);
+  // Promote or upgrade it for real, once. Returning the value without writing
+  // it would leave the other windows on defaults until the user happened to
+  // change a setting — and the pre-paint bootstraps, which read the record
+  // without migrating it, would flash the old layout on every open.
+  const outdated = stored ? (stored.version ?? 1) < THEME_VERSION : Boolean(legacy);
+  if (outdated) writeJson(THEME_KEY, storedTheme(theme));
 
   return {
     ...DEFAULT_PREFERENCES,
@@ -102,7 +144,7 @@ export function loadPreferences(surface: string): Preferences {
 
 export function savePreferences(surface: string, preferences: Preferences): void {
   const { theme, ...host } = preferences;
-  writeJson(THEME_KEY, normalizeTheme(theme));
+  writeJson(THEME_KEY, storedTheme(theme));
   writeJson(keyFor(surface), host satisfies HostPreferences);
 }
 

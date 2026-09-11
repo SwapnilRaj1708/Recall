@@ -32,7 +32,7 @@
       root.style.setProperty('--rc-accent', theme.accent);
     }
 
-    var rowHeight = clamp(theme.rowHeight, 26, 56);
+    var rowHeight = clamp(theme.rowHeight, 22, 56);
     if (rowHeight !== null) root.style.setProperty('--rc-row-height', Math.round(rowHeight) + 'px');
 
     var fontScale = clamp(theme.fontScale, 0.85, 1.4);

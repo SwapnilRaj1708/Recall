@@ -13,7 +13,7 @@
 (function () {
   var SHARED_KEY = 'recall.preferences.theme';
   var WIDGET_ALPHA_FACTOR = 0.82;
-  var WIDGET_ROW_HEIGHT_DELTA = -4;
+  var WIDGET_ROW_HEIGHT_DELTA = -3;
 
   function clamp(value, min, max) {
     return typeof value === 'number' && isFinite(value)
@@ -61,9 +61,9 @@
       root.style.setProperty('--rc-accent', theme.accent);
     }
 
-    var rowHeight = clamp(theme.rowHeight, 26, 56);
+    var rowHeight = clamp(theme.rowHeight, 22, 56);
     if (rowHeight !== null) {
-      var rows = overDesktop ? clamp(rowHeight + WIDGET_ROW_HEIGHT_DELTA, 26, 56) : rowHeight;
+      var rows = overDesktop ? clamp(rowHeight + WIDGET_ROW_HEIGHT_DELTA, 22, 56) : rowHeight;
       root.style.setProperty('--rc-row-height', Math.round(rows) + 'px');
     }
 

@@ -55,8 +55,19 @@
   --rc-border-width: 1px;
 
   /* Tunable at runtime: the single most-requested density control. */
-  --rc-row-height: 34px;
+  --rc-row-height: 28px;
   --rc-row-gap: 1px;
+  /*
+   * What centres one line of text in a row of that height. Rows apply it as
+   * the text's own padding rather than leaving it to `align-items`, so a
+   * wrapped row keeps the same air above and below as its neighbours and the
+   * row-height setting governs wrapped rows too. Floored so a small setting
+   * under a large text size still leaves the text something to sit in.
+   */
+  --rc-row-pad: max(
+    var(--rc-space-1),
+    calc((var(--rc-row-height) - var(--rc-text-md) * var(--rc-leading-tight)) / 2)
+  );
   --rc-control-height: 30px;
   --rc-control-height-sm: 24px;
 

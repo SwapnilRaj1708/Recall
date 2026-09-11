@@ -1,4 +1,4 @@
-import { ACCENT_PRESETS, Button, Switch, cx, type ThemeMode } from '@recall/ui';
+import { ACCENT_PRESETS, Button, Switch, THEME_LIMITS, cx, type ThemeMode } from '@recall/ui';
 import type { ReactNode } from 'react';
 import { useRecall, useSyncStatus, useTaskActions } from '../context.js';
 import styles from './SettingsPanel.module.css';
@@ -92,8 +92,8 @@ export function SettingsPanel({ platformSection, onSignOutBlocked }: SettingsPan
         <Slider
           label="Row height"
           value={theme.rowHeight}
-          min={26}
-          max={56}
+          min={THEME_LIMITS.rowHeight.min}
+          max={THEME_LIMITS.rowHeight.max}
           step={1}
           format={(v) => `${v}px`}
           onChange={(rowHeight) => setPreferences({ theme: { ...theme, rowHeight } })}

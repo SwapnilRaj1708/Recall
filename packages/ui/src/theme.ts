@@ -34,7 +34,7 @@ export const DEFAULT_THEME: ThemeSettings = {
   mode: 'system',
   accent: '#5b5bd6',
   surfaceAlpha: 1,
-  rowHeight: 34,
+  rowHeight: 28,
   fontScale: 1,
 };
 
@@ -67,7 +67,7 @@ export function opaqueTheme(shared: ThemeSettings): ThemeSettings {
 }
 
 export const WIDGET_ALPHA_FACTOR = 0.82;
-export const WIDGET_ROW_HEIGHT_DELTA = -4;
+export const WIDGET_ROW_HEIGHT_DELTA = -3;
 
 export function widgetTheme(shared: ThemeSettings): ThemeSettings {
   const base = normalizeTheme(shared);
@@ -78,9 +78,19 @@ export function widgetTheme(shared: ThemeSettings): ThemeSettings {
   });
 }
 
-const LIMITS = {
+/**
+ * The range each runtime knob accepts. Exported so the settings sliders and the
+ * pre-paint bootstraps clamp to the same numbers as the normaliser; a slider
+ * that reaches a value the normaliser rejects would snap back on every save.
+ */
+export const THEME_LIMITS = {
   surfaceAlpha: { min: 0.35, max: 1 },
-  rowHeight: { min: 26, max: 56 },
+  /*
+   * A row is the text line plus what surrounds it: 13.5px type at 1.3 leading
+   * needs about 18px, so the floor leaves the text a couple of pixels of air
+   * and the ceiling is roomy without being a list of buttons.
+   */
+  rowHeight: { min: 22, max: 56 },
   fontScale: { min: 0.85, max: 1.4 },
 } as const;
 
@@ -92,9 +102,9 @@ export function normalizeTheme(partial: Partial<ThemeSettings> | null | undefine
   return {
     mode: (['light', 'dark', 'system'] as const).includes(merged.mode) ? merged.mode : 'system',
     accent: /^#[0-9a-f]{6}$/i.test(merged.accent) ? merged.accent : DEFAULT_THEME.accent,
-    surfaceAlpha: clamp(merged.surfaceAlpha, LIMITS.surfaceAlpha.min, LIMITS.surfaceAlpha.max),
-    rowHeight: Math.round(clamp(merged.rowHeight, LIMITS.rowHeight.min, LIMITS.rowHeight.max)),
-    fontScale: clamp(merged.fontScale, LIMITS.fontScale.min, LIMITS.fontScale.max),
+    surfaceAlpha: clamp(merged.surfaceAlpha, THEME_LIMITS.surfaceAlpha.min, THEME_LIMITS.surfaceAlpha.max),
+    rowHeight: Math.round(clamp(merged.rowHeight, THEME_LIMITS.rowHeight.min, THEME_LIMITS.rowHeight.max)),
+    fontScale: clamp(merged.fontScale, THEME_LIMITS.fontScale.min, THEME_LIMITS.fontScale.max),
   };
 }
 

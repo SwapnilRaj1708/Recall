@@ -59,6 +59,7 @@ export {
   opaqueTheme,
   WIDGET_ALPHA_FACTOR,
   WIDGET_ROW_HEIGHT_DELTA,
+  THEME_LIMITS,
   ACCENT_PRESETS,
 } from './theme.js';
 export type { ThemeMode, ThemeSettings } from './theme.js';

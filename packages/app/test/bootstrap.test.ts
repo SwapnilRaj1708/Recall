@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_THEME, WIDGET_ALPHA_FACTOR, WIDGET_ROW_HEIGHT_DELTA } from '@recall/ui';
+import { DEFAULT_THEME, THEME_LIMITS, WIDGET_ALPHA_FACTOR, WIDGET_ROW_HEIGHT_DELTA } from '@recall/ui';
 import { describe, expect, it } from 'vitest';
 import { THEME_KEY } from '../src/settings.js';
 
@@ -23,6 +23,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const BOOTSTRAPS = {
   desktop: 'apps/desktop/public/theme-bootstrap.js',
   extension: 'apps/extension/public/theme-bootstrap.js',
+  mobile: 'apps/mobile/public/theme-bootstrap.js',
 } as const;
 
 const source = (file: string): string => readFileSync(join(ROOT, file), 'utf8');
@@ -42,6 +43,14 @@ describe.each(Object.entries(BOOTSTRAPS))('%s theme bootstrap', (_surface, file)
     // A corrupt rowHeight written straight into a CSS variable would render a
     // list of thousand-pixel rows before React ever gets a say.
     expect(code).toMatch(/clamp\(/);
+  });
+
+  it('clamps the row height to the same range as the normaliser', () => {
+    // Narrower here and a stored value the slider allows would flash at the
+    // clamped size before React widened it; wider, and a value the normaliser
+    // rejects would flash at its stored size before React shrank it.
+    const { min, max } = THEME_LIMITS.rowHeight;
+    expect(code).toContain(`clamp(theme.rowHeight, ${min}, ${max})`);
   });
 
   it('validates the accent as a hex colour before writing it into CSS', () => {
@@ -67,10 +76,10 @@ describe('the desktop bootstrap and widgetTheme agree', () => {
   });
 });
 
-describe('the extension bootstrap matches opaqueTheme', () => {
-  const code = source(BOOTSTRAPS.extension);
+describe.each(['extension', 'mobile'] as const)('the %s bootstrap matches opaqueTheme', (surface) => {
+  const code = source(BOOTSTRAPS[surface]);
 
-  it('pins transparency off, since a popup has nothing behind it', () => {
+  it('pins transparency off, since there is nothing behind the surface', () => {
     expect(code).toMatch(/--rc-surface-alpha['"],\s*['"]1['"]/);
   });
 

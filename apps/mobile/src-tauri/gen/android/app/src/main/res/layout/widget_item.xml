@@ -6,9 +6,14 @@
   a collection widget each child can carry its own fill-in intent, which is what
   makes that possible without a separate button per row.
 
-  The dot's target is far wider than the dot itself — 40dp is the minimum
-  comfortable touch target, and this is the control most likely to be tapped
-  without looking.
+  The dot's target is far wider than the dot itself: this is the control most
+  likely to be tapped without looking.
+
+  Row geometry matches the web surfaces, which put 13.5px type in a 28px row:
+  here 14sp type in a 32dp row, so the space between one line and the next is
+  the same fraction of the text on the home screen as it is in the app. The
+  text's vertical padding is what a wrapped row gets; a single line is centred
+  by the row's minHeight.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -16,13 +21,13 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:background="@drawable/widget_row_ripple"
-    android:minHeight="40dp">
+    android:minHeight="32dp">
 
     <FrameLayout
         android:id="@+id/item_toggle"
         android:layout_width="38dp"
         android:layout_height="match_parent"
-        android:minHeight="40dp">
+        android:minHeight="32dp">
 
         <ImageView
             android:id="@+id/item_dot"
@@ -37,8 +42,8 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:paddingTop="9dp"
-        android:paddingBottom="9dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
         android:paddingEnd="8dp"
         android:textSize="14sp"
         android:textColor="@color/widget_text"
