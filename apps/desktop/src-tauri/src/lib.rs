@@ -132,6 +132,27 @@ async fn show_main(app: AppHandle) {
     let _ = app.run_on_main_thread(move || open_main(&handle));
 }
 
+/// Run `f` on the main thread on a *later* turn of the event loop.
+///
+/// `run_on_main_thread` is not enough on its own: when the caller is already
+/// on the main thread it runs the closure inline, right where it stands. That
+/// is exactly wrong inside a Win32 message handler. The single-instance plugin
+/// delivers its callback from within the `WM_COPYDATA` that the second process
+/// is blocked in via `SendMessage`, and building a WebView2 window there —
+/// which pumps a nested message loop waiting for the browser to come up —
+/// never completes. The running app stops responding, the second launch waits
+/// on it forever, and the only way out is Task Manager.
+///
+/// Posting from another thread forces the closure through the event loop's
+/// queue, where it runs once the handler has returned and the sender is gone.
+fn defer_to_event_loop(app: &AppHandle, f: impl FnOnce(&AppHandle) + Send + 'static) {
+    let handle = app.clone();
+    std::thread::spawn(move || {
+        let inner = handle.clone();
+        let _ = handle.run_on_main_thread(move || f(&inner));
+    });
+}
+
 /// Tell every window whether the widget is on screen.
 ///
 /// The main window shows a toggle for it, and the widget can also be hidden
@@ -509,8 +530,12 @@ pub fn run() {
         .manage(PendingWindowState::default())
         // Re-launching should surface the app that is already running, not
         // start a second copy fighting over the same windows and hotkey.
+        //
+        // Deferred, never built here: this callback runs inside the message
+        // the second process is blocked sending, and opening a window in
+        // that context deadlocks both processes. See `defer_to_event_loop`.
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
-            open_main(app);
+            defer_to_event_loop(app, |app| open_main(app));
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(
