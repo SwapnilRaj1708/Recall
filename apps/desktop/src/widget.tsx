@@ -1,6 +1,13 @@
-import { DemoProvider, RecallProvider, WidgetView, loadPreferences, savePreferences } from '@recall/app';
+import {
+  DemoProvider,
+  RecallProvider,
+  WidgetView,
+  loadPreferences,
+  savePreferences,
+  watchPreferences,
+} from '@recall/app';
 import { ToastProvider, widgetTheme } from '@recall/ui';
-import { StrictMode, useState, type ReactNode } from 'react';
+import { StrictMode, useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { config, createStorage, demo } from './runtime.js';
 import { desktop, tauriOAuthLauncher } from './tauri.js';
@@ -17,10 +24,27 @@ import { desktop, tauriOAuthLauncher } from './tauri.js';
 function Widget() {
   const [alwaysOnTop, setAlwaysOnTop] = useState(() => loadPreferences('widget').alwaysOnTop);
 
+  // The window is created pinned by its config, whatever was saved. The saved
+  // choice has to be applied to the window, not only drawn on the button —
+  // otherwise an unpinned widget comes back on top of everything, showing a
+  // pin that says it is not, and it takes a full toggle cycle to agree again.
+  // Running on every change also makes this the one place the window is set,
+  // so the main window's switch and this button cannot drift apart.
+  useEffect(() => {
+    void desktop.setWidgetAlwaysOnTop(alwaysOnTop);
+  }, [alwaysOnTop]);
+
+  // The same setting is also a switch in the main window's settings. It is
+  // the widget's setting wherever it is flipped, so both write this slot and
+  // the button follows it.
+  useEffect(
+    () => watchPreferences('widget', (next) => setAlwaysOnTop(next.alwaysOnTop)),
+    [],
+  );
+
   const toggleAlwaysOnTop = () => {
     const next = !alwaysOnTop;
     setAlwaysOnTop(next);
-    void desktop.setWidgetAlwaysOnTop(next);
     savePreferences('widget', { ...loadPreferences('widget'), alwaysOnTop: next });
   };
 

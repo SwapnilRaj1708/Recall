@@ -201,9 +201,13 @@ size, transparency — is **one shared record** for the whole machine, so a chan
 in the desktop app reaches the widget without either window restarting. This is
 not a nicety: the widget has no settings screen, so a theme stored per-surface
 is a theme nobody can ever change, which is exactly the bug an earlier version
-shipped. Host settings — always-on-top, autostart, the hotkey, whether completed
-tasks are listed — stay per-surface, because they genuinely belong to one
-window.
+shipped. Host settings — autostart, the hotkey, whether completed tasks are
+listed — stay per-surface, because they genuinely belong to one window. The
+widget's always-on-top is one of these and belongs to the widget: the switch in
+the main window writes the widget's slot, and the widget is the only place the
+setting is applied to the window — on every change and on start-up, because the
+window is created pinned by its config and a saved "unpinned" was once drawn on
+the button but never applied.
 
 Surfaces still differ in how they *render* that shared record rather than by
 storing their own copy of it: `widgetTheme` runs denser and translucent for the

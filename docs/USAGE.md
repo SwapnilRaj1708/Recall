@@ -184,8 +184,11 @@ own. The widget still renders it its own way: a little denser than the main
 window, and translucent where the main window is solid, because it is the only
 one with your desktop behind it.
 
-Host settings — always-on-top, Start with Windows, the quick-capture shortcut,
-whether completed tasks stay listed — belong to the window that set them.
+Host settings — Start with Windows, the quick-capture shortcut, whether
+completed tasks stay listed — belong to the window that set them. Keeping the
+widget on top is the widget's own setting: the pin on the widget and the switch
+in the main window's settings are two controls for the same thing, and the
+widget comes back exactly as you left it.
 
 If you want something the sliders do not cover — a different accent colour,
 different corner rounding, more spacing between rows — it is all in

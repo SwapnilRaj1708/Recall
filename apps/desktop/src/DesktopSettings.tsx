@@ -71,14 +71,12 @@ export function DesktopSettings({
       </Row>
 
       <Row label="Keep the widget on top" hint="Stays visible over other windows.">
-        <Switch
-          checked={alwaysOnTop}
-          label="Keep the widget on top"
-          onChange={(next) => {
-            void desktop.setWidgetAlwaysOnTop(next);
-            onAlwaysOnTopChange(next);
-          }}
-        />
+        {/*
+          Only the preference is written here. The widget owns its window and
+          applies the setting when the record changes, so there is one path
+          from "what the controls say" to "what the window does".
+        */}
+        <Switch checked={alwaysOnTop} label="Keep the widget on top" onChange={onAlwaysOnTopChange} />
       </Row>
 
       <Row label="Start with Windows" hint="Recall opens in the tray when you sign in.">

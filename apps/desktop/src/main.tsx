@@ -1,4 +1,11 @@
-import { DemoProvider, FullView, RecallProvider, loadPreferences, savePreferences } from '@recall/app';
+import {
+  DemoProvider,
+  FullView,
+  RecallProvider,
+  loadPreferences,
+  savePreferences,
+  watchPreferences,
+} from '@recall/app';
 import { ToastProvider, IconButton } from '@recall/ui';
 import { StrictMode, useEffect, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -10,9 +17,11 @@ import { desktop, onWidgetVisibility, tauriOAuthLauncher } from './tauri.js';
  * The full desktop window: everything the widget deliberately leaves out.
  */
 function DesktopApp() {
-  const initial = loadPreferences('desktop');
-  const [alwaysOnTop, setAlwaysOnTop] = useState(initial.alwaysOnTop);
-  const [hotkey, setHotkey] = useState(initial.globalHotkey);
+  // "Keep the widget on top" is the widget's setting, so it lives in the
+  // widget's slot: the pin on the widget and this switch are two controls for
+  // one fact, and two records of it would let them disagree.
+  const [alwaysOnTop, setAlwaysOnTop] = useState(() => loadPreferences('widget').alwaysOnTop);
+  const [hotkey, setHotkey] = useState(() => loadPreferences('desktop').globalHotkey);
   const [widgetVisible, setWidgetVisible] = useState(true);
 
   // The widget can also be hidden from its own menu or the tray, so its state
@@ -23,7 +32,16 @@ function DesktopApp() {
     return () => void pending.then((off) => off());
   }, []);
 
-  const persist = (update: { alwaysOnTop?: boolean; globalHotkey?: string }) => {
+  // Likewise the pin: flipped on the widget, it has to move this switch.
+  useEffect(
+    () => watchPreferences('widget', (next) => setAlwaysOnTop(next.alwaysOnTop)),
+    [],
+  );
+
+  const persistWidget = (update: { alwaysOnTop?: boolean }) => {
+    savePreferences('widget', { ...loadPreferences('widget'), ...update });
+  };
+  const persist = (update: { globalHotkey?: string }) => {
     savePreferences('desktop', { ...loadPreferences('desktop'), ...update });
   };
 
@@ -48,7 +66,7 @@ function DesktopApp() {
           alwaysOnTop={alwaysOnTop}
           onAlwaysOnTopChange={(value) => {
             setAlwaysOnTop(value);
-            persist({ alwaysOnTop: value });
+            persistWidget({ alwaysOnTop: value });
           }}
           hotkey={hotkey}
           onHotkeyChange={(value) => {
