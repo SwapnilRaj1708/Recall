@@ -26,8 +26,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
-    android:paddingTop="4dp"
-    android:paddingBottom="4dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
     android:paddingEnd="4dp">
 
     <!-- Ends a quarter of the way across the 30dp strip, which overlaps it from above. -->
