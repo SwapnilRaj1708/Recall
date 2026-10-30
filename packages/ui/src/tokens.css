@@ -66,8 +66,24 @@
    */
   --rc-row-pad: max(
     var(--rc-space-1),
-    calc((var(--rc-row-height) - var(--rc-text-md) * var(--rc-leading-tight)) / 2)
+    calc((var(--rc-row-height) - var(--rc-task-font-size) * var(--rc-leading-tight)) / 2)
   );
+
+  /*
+   * Customize. The task rows and the widget panel read these, and settings
+   * override them inline on the root; removing an override brings back the
+   * default here. The defaults are exactly what the rows looked like before
+   * Customize existed.
+   */
+  --rc-task-font-size: var(--rc-text-md);
+  --rc-task-font-family: inherit;
+  --rc-task-font-weight: var(--rc-weight-normal);
+  --rc-task-font-style: normal;
+  --rc-task-font-stretch: normal;
+  --rc-task-margin-left: 0px;
+  --rc-task-margin-top: 0px;
+  --rc-task-margin-right: 0px;
+  --rc-task-margin-bottom: 0px;
   --rc-control-height: 30px;
   --rc-control-height-sm: 24px;
 

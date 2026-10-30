@@ -78,4 +78,26 @@
   } catch (error) {
     /* Blocked storage is not a reason to fail to render. */
   }
+
+  // Customize, as the app last applied it. Only the variables Customize owns,
+  // and only values that cannot break out of a declaration, so a tampered
+  // record could at worst restyle the list. Kept in step with
+  // CUSTOMIZATION_VAR in @recall/app by a test.
+  try {
+    var custom = JSON.parse(localStorage.getItem('recall.customize') || 'null');
+    if (custom && typeof custom === 'object') {
+      for (var name in custom) {
+        var value = custom[name];
+        if (
+          /^--rc-(task|widget)-[a-z-]+$/.test(name) &&
+          typeof value === 'string' &&
+          /^[#\w\s.,%()\/'"-]*$/.test(value)
+        ) {
+          document.documentElement.style.setProperty(name, value);
+        }
+      }
+    }
+  } catch (error) {
+    /* The first frame uses default styling; the app corrects it a moment later. */
+  }
 })();

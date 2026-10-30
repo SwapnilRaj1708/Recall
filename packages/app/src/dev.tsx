@@ -1,8 +1,9 @@
-import { MemoryStorage, SyncEngine, type AuthState } from '@recall/core';
+import { MemoryStorage, SettingsStore, SyncEngine, type AuthState } from '@recall/core';
 import { FakeRemote, FakeServer } from '@recall/core/testing';
 import { applyTheme, opaqueTheme, watchSystemTheme, type ThemeSettings } from '@recall/ui';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { RecallContext, type RecallContextValue } from './context.js';
+import { useSyncedSettingsEffects } from './syncedSettings.js';
 import {
   loadPreferences,
   savePreferences,
@@ -45,11 +46,22 @@ export function DemoProvider({ surface, children, themeFor }: DemoProviderProps)
     loadPreferences(surface),
   );
 
-  const engine = useMemo(() => {
+  const { engine, settings } = useMemo(() => {
     const server = new FakeServer();
     const remote = new FakeRemote(server, DEMO_USER.status === 'signed-in' ? 'demo-user' : null);
-    return new SyncEngine({ storage: new MemoryStorage(), remote, channelName: null });
+    const storage = new MemoryStorage();
+    return {
+      engine: new SyncEngine({ storage, remote, channelName: null }),
+      settings: new SettingsStore({ storage, remote, channelName: null }),
+    };
   }, []);
+
+  useEffect(() => {
+    void settings.start();
+    return () => settings.stop();
+  }, [settings]);
+
+  useSyncedSettingsEffects(engine, settings);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,13 +111,14 @@ export function DemoProvider({ surface, children, themeFor }: DemoProviderProps)
   const value = useMemo<RecallContextValue>(
     () => ({
       engine,
+      settings,
       authState: DEMO_USER,
       preferences,
       setPreferences,
       signIn: async () => {},
       signOut: async () => {},
     }),
-    [engine, preferences, setPreferences],
+    [engine, settings, preferences, setPreferences],
   );
 
   return <RecallContext.Provider value={value}>{children}</RecallContext.Provider>;

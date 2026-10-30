@@ -88,9 +88,19 @@
   height: 100%;
   min-height: 0;
   /* Rounded on all sides: the window itself is transparent behind it. */
-  border-radius: var(--rc-radius-lg);
+  border-radius: var(--rc-widget-radius, var(--rc-radius-lg));
   box-shadow: var(--rc-shadow-lg);
   overflow: hidden;
+}
+
+/*
+ * Customize's widget background and border. Doubled up with the shared glass
+ * class so these win over its defaults; with nothing customised the variables
+ * are unset and the glass look is unchanged.
+ */
+.widget:global(.rc-glass) {
+  background: var(--rc-widget-bg, var(--rc-surface));
+  border-color: var(--rc-widget-border, var(--rc-border));
 }
 
 .widgetHeader {

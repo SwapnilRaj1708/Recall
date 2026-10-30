@@ -167,3 +167,99 @@
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* -------------------------------------------------------------- customize */
+
+.note {
+  margin: 0;
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+}
+
+.subsectionTitle {
+  margin: var(--rc-space-4) 0 0;
+  font-size: var(--rc-text-sm);
+  font-weight: var(--rc-weight-semibold);
+  color: var(--rc-text-secondary);
+}
+
+.inlineGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--rc-space-3);
+}
+
+.colorInput {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: var(--rc-border-width) solid var(--rc-border-strong);
+  border-radius: var(--rc-radius-sm);
+  background: none;
+  cursor: pointer;
+}
+
+.colorInput::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.colorInput::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+/* A picker showing a colour that is not in use, because Default or None is. */
+.colorInputIdle {
+  opacity: 0.45;
+}
+
+.chip {
+  padding: var(--rc-space-1) var(--rc-space-4);
+  border: var(--rc-border-width) solid var(--rc-border);
+  border-radius: var(--rc-radius-full);
+  background: transparent;
+  color: var(--rc-text-secondary);
+  font-size: var(--rc-text-xs);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.chipActive {
+  border-color: var(--rc-accent);
+  background: var(--rc-accent-soft);
+  color: var(--rc-accent);
+}
+
+.sliderIdle {
+  opacity: 0.5;
+}
+
+.marginField {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.marginLabel {
+  font-size: var(--rc-text-xs);
+  color: var(--rc-text-tertiary);
+}
+
+.marginInput {
+  width: 46px;
+  height: var(--rc-control-height-sm);
+  padding: 0 var(--rc-space-2);
+  border: var(--rc-border-width) solid var(--rc-border);
+  border-radius: var(--rc-radius-sm);
+  background: var(--rc-surface-raised);
+  font-size: var(--rc-text-sm);
+  text-align: center;
+}
+
+/* Long rows of options wrap rather than push the panel wider. */
+.segmented {
+  flex-wrap: wrap;
+}

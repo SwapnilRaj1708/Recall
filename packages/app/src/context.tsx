@@ -1,5 +1,6 @@
 import {
   AuthController,
+  SettingsStore,
   SyncEngine,
   createRecallClient,
   isConfigured,
@@ -10,6 +11,7 @@ import {
   type SessionStorage,
   type StorageAdapter,
   type SyncStatus,
+  type SyncedSettings,
   type Task,
 } from '@recall/core';
 import { applyTheme, opaqueTheme, watchSystemTheme, type ThemeSettings } from '@recall/ui';
@@ -31,6 +33,7 @@ import {
   watchPreferences,
   type Preferences,
 } from './settings.js';
+import { useSettingsSnapshot, useSyncedSettingsEffects } from './syncedSettings.js';
 
 export interface RecallProviderProps {
   config: Partial<RecallConfig>;
@@ -57,6 +60,8 @@ export interface RecallProviderProps {
 
 export interface RecallContextValue {
   engine: SyncEngine;
+  /** Account-level settings, synced across devices. See `useSyncedSettings`. */
+  settings: SettingsStore;
   authState: AuthState;
   preferences: Preferences;
   setPreferences: (update: Partial<Preferences>) => void;
@@ -109,7 +114,8 @@ export function RecallProvider({
       const remote = new SupabaseRemote(client);
       const auth = new AuthController(client, remote);
       const engine = new SyncEngine({ storage, remote });
-      return { client, remote, auth, engine };
+      const settings = new SettingsStore({ storage, remote });
+      return { client, remote, auth, engine, settings };
     } catch (error) {
       setConfigError(error instanceof Error ? error.message : String(error));
       return null;
@@ -123,7 +129,7 @@ export function RecallProvider({
 
   useEffect(() => {
     if (!services) return;
-    const { auth, engine } = services;
+    const { auth, engine, settings } = services;
 
     const unsubscribeAuth = auth.subscribe(() => setAuthState(auth.getState()));
 
@@ -134,6 +140,7 @@ export function RecallProvider({
     // meant that anything wrong with local storage left the whole interface
     // stuck on a loading skeleton, with no way to capture anything at all.
     void engine.start();
+    void settings.start();
 
     void (async () => {
       const state = await auth.init();
@@ -145,6 +152,7 @@ export function RecallProvider({
       unsubscribeAuth();
       auth.dispose();
       engine.stop();
+      settings.stop();
     };
   }, [services]);
 
@@ -152,9 +160,15 @@ export function RecallProvider({
   useEffect(() => {
     if (!services) return;
     const userId = authState.status === 'signed-in' ? authState.userId : null;
-    if (userId && userId !== previousUser.current) void services.engine.syncNow();
+    if (userId && userId !== previousUser.current) {
+      void services.engine.syncNow();
+      void services.settings.sync();
+    }
     previousUser.current = userId;
   }, [services, authState]);
+
+  // Placement, Customize and the end-of-day clear-out.
+  useSyncedSettingsEffects(services?.engine ?? null, services?.settings ?? null);
 
   /* ---------------------------------------------------------------- theme */
 
@@ -226,12 +240,15 @@ export function RecallProvider({
     // Clear the local mirror so a signed-out machine does not keep a readable
     // copy of the list. Callers are expected to have checked for unsynced work.
     await services.engine.reset();
+    // Settings belong to the account too; the next one to sign in gets theirs.
+    await services.settings.reset();
   }, [services]);
 
   const value = useMemo<RecallContextValue | null>(() => {
     if (!services) return null;
     return {
       engine: services.engine,
+      settings: services.settings,
       authState,
       preferences,
       setPreferences,
@@ -364,8 +381,22 @@ export function useUnsyncedIds(): ReadonlySet<string> {
   return useMemo(() => engine.getUnsyncedIds(), [engine, version]);
 }
 
+/** The account's synced settings, and a way to change them. */
+export function useSyncedSettings(): {
+  settings: SyncedSettings;
+  updateSettings: (patch: Partial<SyncedSettings>) => void;
+} {
+  const { settings: store } = useRecall();
+  const settings = useSettingsSnapshot(store);
+  const updateSettings = useCallback(
+    (patch: Partial<SyncedSettings>) => void store.update(patch),
+    [store],
+  );
+  return { settings, updateSettings };
+}
+
 export function useTaskActions() {
-  const { engine } = useRecall();
+  const { engine, settings } = useRecall();
   return useMemo(
     () => ({
       /**
@@ -381,11 +412,14 @@ export function useTaskActions() {
       restore: (id: string) => engine.restore(id),
       moveToIndex: (id: string, index: number, visible?: Task[]) =>
         engine.moveToIndex(id, index, visible),
-      syncNow: () => engine.syncNow(),
+      // Settings ride along with every manual or automatic sync.
+      syncNow: async () => {
+        await Promise.all([engine.syncNow(), settings.sync()]);
+      },
       retryFailed: () => engine.retryFailed(),
       hasUnsyncedWork: () => engine.hasUnsyncedWork(),
     }),
-    [engine],
+    [engine, settings],
   );
 }
 

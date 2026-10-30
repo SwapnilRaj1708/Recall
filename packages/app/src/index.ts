@@ -6,6 +6,7 @@ export {
   useSyncStatus,
   useTaskActions,
   useUnsyncedIds,
+  useSyncedSettings,
 } from './context.js';
 export type { RecallProviderProps, RecallContextValue, TaskLists } from './context.js';
 
@@ -20,6 +21,14 @@ export {
   watchPreferences,
 } from './settings.js';
 export type { Preferences } from './settings.js';
+
+export {
+  customizationVars,
+  applyCustomization,
+  CUSTOMIZATION_MIRROR_KEY,
+  CUSTOMIZATION_VAR,
+} from './customize.js';
+export type { CustomizationVars } from './customize.js';
 
 export { AuthGate, SignIn } from './components/AuthGate.js';
 export { TaskListView, relativeTime } from './components/TaskListView.js';

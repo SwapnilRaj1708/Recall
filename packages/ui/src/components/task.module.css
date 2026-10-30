@@ -18,6 +18,8 @@
   align-items: center;
   gap: var(--rc-space-4);
   min-height: var(--rc-row-height);
+  margin: var(--rc-task-margin-top) var(--rc-task-margin-right) var(--rc-task-margin-bottom)
+    var(--rc-task-margin-left);
   padding: 0 var(--rc-space-3) 0 var(--rc-space-4);
   border-radius: var(--rc-radius-md);
   background: transparent;
@@ -90,9 +92,13 @@
   position: relative;
   display: block;
   padding: var(--rc-row-pad) 0;
-  font-size: var(--rc-text-md);
+  font-family: var(--rc-task-font-family);
+  font-size: var(--rc-task-font-size);
+  font-weight: var(--rc-task-font-weight);
+  font-style: var(--rc-task-font-style);
+  font-stretch: var(--rc-task-font-stretch);
   line-height: var(--rc-leading-tight);
-  color: var(--rc-text);
+  color: var(--rc-task-color, var(--rc-text));
   text-align: left;
   overflow-wrap: anywhere;
   pointer-events: none;
@@ -127,7 +133,7 @@
 }
 
 .textCompleted {
-  color: var(--rc-text-tertiary);
+  color: var(--rc-task-done-color, var(--rc-text-tertiary));
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
@@ -141,9 +147,13 @@
   border: var(--rc-border-width) solid var(--rc-accent);
   border-radius: var(--rc-radius-sm);
   background: var(--rc-surface-raised);
-  font-size: var(--rc-text-md);
+  font-family: var(--rc-task-font-family);
+  font-size: var(--rc-task-font-size);
+  font-weight: var(--rc-task-font-weight);
+  font-style: var(--rc-task-font-style);
+  font-stretch: var(--rc-task-font-stretch);
   line-height: var(--rc-leading-tight);
-  color: var(--rc-text);
+  color: var(--rc-task-color, var(--rc-text));
   outline: none;
 }
 
@@ -270,5 +280,5 @@
 
 /* Completion still wins: a finished task reads as finished either way. */
 .rowUnsynced .textCompleted {
-  color: var(--rc-text-tertiary);
+  color: var(--rc-task-done-color, var(--rc-text-tertiary));
 }
