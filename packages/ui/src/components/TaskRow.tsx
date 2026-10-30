@@ -1,11 +1,14 @@
 import {
+  Fragment,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from 'react';
+import { splitLinks } from '../links.js';
 import { Icon } from './Icon.js';
 import { Checkbox, IconButton, Kbd, cx } from './primitives.js';
 import styles from './task.module.css';
@@ -53,6 +56,7 @@ export function TaskRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(text);
   const inputRef = useRef<HTMLInputElement>(null);
+  const segments = useMemo(() => splitLinks(text), [text]);
 
   // If the task changes underneath an open editor — a sync from another device —
   // leave the in-progress draft alone rather than yanking the text away
@@ -151,18 +155,54 @@ export function TaskRow({
           aria-label="Edit task"
         />
       ) : (
-        <button
-          type="button"
-          className={cx(
-            styles.text,
-            compact && styles.textClamped,
-            completed && styles.textCompleted,
-          )}
-          onClick={() => setEditing(true)}
-          title="Click to edit"
-        >
-          {text}
-        </button>
+        /*
+          Two layers, so a link can sit inside text that is itself a control.
+
+          A link cannot go inside the edit button — interactive content inside
+          a button is invalid, and browsers disagree about which one a click
+          reaches. So the button is an empty layer filling the cell, and the
+          text is drawn over it with pointer events off: a click on the words
+          falls through to the button and starts an edit, while a click on a
+          link lands on the link.
+
+          Nothing here may stop or cancel the link's click. In the desktop and
+          phone apps it is the opener plugin's listener on `window` that sends
+          a `_blank` link to the real browser, and it ignores any click that
+          was cancelled — and React's stopPropagation would keep it from ever
+          reaching `window` at all.
+        */
+        <span className={styles.textCell}>
+          <button
+            type="button"
+            className={styles.editHit}
+            onClick={() => setEditing(true)}
+            title="Click to edit"
+            aria-label={`Edit "${text}"`}
+          />
+          <span
+            className={cx(
+              styles.text,
+              compact && styles.textClamped,
+              completed && styles.textCompleted,
+            )}
+          >
+            {segments.map((segment, index) =>
+              segment.kind === 'link' ? (
+                <a
+                  key={index}
+                  className={styles.link}
+                  href={segment.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {segment.text}
+                </a>
+              ) : (
+                <Fragment key={index}>{segment.text}</Fragment>
+              ),
+            )}
+          </span>
+        </span>
       )}
 
       {!editing && meta && !compact ? <span className={styles.meta}>{meta}</span> : null}

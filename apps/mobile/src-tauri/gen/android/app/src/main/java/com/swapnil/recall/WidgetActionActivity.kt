@@ -1,8 +1,15 @@
 package com.swapnil.recall
 
 import android.appwidget.AppWidgetManager
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.text.TextUtils
+import android.util.TypedValue
+import android.view.Gravity
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -91,11 +98,31 @@ class WidgetActionActivity : AppCompatActivity() {
             finish()
             return
         }
-        val input = focusedInput(existing = intent.getStringExtra(EXTRA_TASK_TEXT))
+        val existing = intent.getStringExtra(EXTRA_TASK_TEXT)
+        val input = focusedInput(existing = existing)
+        var dialog: AlertDialog? = null
 
-        AlertDialog.Builder(this)
+        // A row's links cannot be tapped on the widget — the text's one tap
+        // target opens this editor — so they are offered here, above the
+        // field, one tap away instead of a trip into the app.
+        val links = Links.find(existing.orEmpty())
+        val content = if (links.isEmpty()) {
+            pad(input)
+        } else {
+            pad(
+                LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    links.forEach { link ->
+                        addView(linkRow(link) { dialog?.dismiss() })
+                    }
+                    addView(input)
+                }
+            )
+        }
+
+        dialog = AlertDialog.Builder(this)
             .setTitle(R.string.widget_dialog_edit_title)
-            .setView(pad(input))
+            .setView(content)
             .setPositiveButton(R.string.widget_dialog_ok) { _, _ ->
                 val text = input.text.toString().trim()
                 if (text.isNotEmpty()) {
@@ -141,6 +168,39 @@ class WidgetActionActivity : AppCompatActivity() {
             manager?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
         }
         return dialog
+    }
+
+    /**
+     * One link, shown the way the app shows it: underlined, in the text's own
+     * colour rather than a button's. Tapping it opens the browser and closes
+     * the editor without saving, since nothing was typed.
+     */
+    private fun linkRow(link: Links.Link, onOpened: () -> Unit): TextView =
+        TextView(this).apply {
+            text = Links.underlined(link.text)
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            setSingleLine(true)
+            // The end of a long link is the part that tells two apart.
+            ellipsize = TextUtils.TruncateAt.MIDDLE
+            gravity = Gravity.CENTER_VERTICAL
+            minHeight = (40 * resources.displayMetrics.density).toInt()
+            contentDescription = getString(R.string.widget_dialog_open_link, link.text)
+            setOnClickListener {
+                openInBrowser(link.href)
+                onOpened()
+            }
+        }
+
+    private fun openInBrowser(href: String) {
+        try {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(href)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            )
+        } catch (_: ActivityNotFoundException) {
+            // No browser at all is vanishingly rare; failing quietly beats a crash.
+        }
     }
 
     /**

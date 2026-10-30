@@ -55,7 +55,10 @@ private class RecallWidgetFactory(
         )
 
         val views = RemoteViews(context.packageName, R.layout.widget_item)
-        views.setTextViewText(R.id.item_text, task.text)
+        // Links are underlined, as in the app. They cannot be tapped on the
+        // widget itself — a collection row has one tap target per child, and
+        // the text's is the editor — so the editor offers to open them.
+        views.setTextViewText(R.id.item_text, Links.underlined(task.text))
 
         // A completed task reads as done three ways at once: the dot loses its
         // colour, the text greys out, and it is struck through. On a panel

@@ -1,5 +1,8 @@
 import './tokens.css';
 
+export { splitLinks, hrefFor } from './links.js';
+export type { TextSegment } from './links.js';
+
 export { Icon } from './components/Icon.js';
 export type { IconName, IconProps } from './components/Icon.js';
 

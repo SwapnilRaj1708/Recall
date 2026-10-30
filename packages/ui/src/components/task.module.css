@@ -63,18 +63,58 @@
   cursor: grabbing;
 }
 
-.text {
+/*
+ * The text cell is two layers: an empty edit button filling it, and the words
+ * drawn on top with pointer events off, so clicks on plain text fall through to
+ * the button while links take their own clicks. See TaskRow for why.
+ */
+.textCell {
+  position: relative;
   flex: 1;
   min-width: 0;
+}
+
+.editHit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: var(--rc-radius-sm);
+  background: none;
+  cursor: text;
+}
+
+.text {
+  position: relative;
+  display: block;
   padding: var(--rc-row-pad) 0;
   font-size: var(--rc-text-md);
   line-height: var(--rc-leading-tight);
   color: var(--rc-text);
   text-align: left;
   overflow-wrap: anywhere;
-  background: none;
-  border: none;
-  cursor: text;
+  pointer-events: none;
+}
+
+/*
+ * Underlined and otherwise the colour of the text around it: a list of links
+ * in the accent colour would shout, and the list is read by scanning. Hover
+ * is where it says "this one goes somewhere".
+ */
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.link:hover {
+  color: var(--rc-accent);
 }
 
 /* One line in the widget, where vertical space is the scarce resource. */
