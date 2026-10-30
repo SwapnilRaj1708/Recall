@@ -1,5 +1,6 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 import type { Task } from '../model/types.js';
+import type { SettingsRemote, StampedSettings } from '../settings/store.js';
 import {
   AuthSyncError,
   PermanentSyncError,
@@ -27,9 +28,11 @@ function rewind(iso: string, byMs: number): string {
  * write into another list, and it returns the winning row so a client that lost
  * a comparison corrects itself on the same round trip.
  */
-export class SupabaseRemote implements RemoteAdapter {
+export class SupabaseRemote implements RemoteAdapter, SettingsRemote {
   private userId: string | null = null;
   private channel: RealtimeChannel | null = null;
+  private settingsChannel: RealtimeChannel | null = null;
+  private settingsListener: ((all: StampedSettings) => void) | null = null;
   private handlers: {
     onTasks: (tasks: Task[]) => void;
     onState: (state: RealtimeState) => void;
@@ -50,6 +53,58 @@ export class SupabaseRemote implements RemoteAdapter {
     if (this.userId === userId) return;
     this.userId = userId;
     if (this.handlers) this.openChannel();
+    if (this.settingsListener) this.openSettingsChannel();
+  }
+
+  /* -------------------------------------------------------------- settings */
+
+  async fetchSettings(): Promise<StampedSettings> {
+    const { data, error } = await this.client
+      .from('user_settings')
+      .select('settings')
+      .maybeSingle();
+    if (error) throw classify(error);
+    return ((data as { settings?: StampedSettings } | null)?.settings ?? {}) as StampedSettings;
+  }
+
+  /** Through `put_settings`, which merges per key server-side, like `push_tasks`. */
+  async putSettings(patch: StampedSettings): Promise<StampedSettings> {
+    const { data, error } = await this.client.rpc('put_settings', { patch });
+    if (error) throw classify(error);
+    return (data ?? {}) as StampedSettings;
+  }
+
+  subscribeSettings(onChange: (all: StampedSettings) => void): () => void {
+    this.settingsListener = onChange;
+    this.openSettingsChannel();
+    return () => {
+      this.settingsListener = null;
+      this.closeSettingsChannel();
+    };
+  }
+
+  private openSettingsChannel(): void {
+    this.closeSettingsChannel();
+    const listener = this.settingsListener;
+    const userId = this.userId;
+    if (!listener || !userId) return;
+    this.settingsChannel = this.client
+      .channel(`settings:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const row = payload.new as { settings?: StampedSettings } | undefined;
+          if (row?.settings) listener(row.settings);
+        },
+      )
+      .subscribe();
+  }
+
+  private closeSettingsChannel(): void {
+    if (!this.settingsChannel) return;
+    void this.client.removeChannel(this.settingsChannel);
+    this.settingsChannel = null;
   }
 
   async push(tasks: readonly Task[]): Promise<Task[]> {

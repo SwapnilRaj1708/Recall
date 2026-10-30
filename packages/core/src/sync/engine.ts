@@ -94,6 +94,7 @@ export class SyncEngine {
   private readonly readyPromise: Promise<void>;
   private markReady: () => void = () => {};
   private flushing = false;
+  private newTaskPlacement: 'top' | 'bottom' = 'top';
   private pulling = false;
   private consecutiveFailures = 0;
   private retryHandle: unknown = null;
@@ -293,8 +294,31 @@ export class SyncEngine {
   async capture(text: string, id?: string): Promise<Task | null> {
     if (isBlank(text)) return null;
     if (id !== undefined && this.tasks.has(id)) return null;
-    const task = createTask(text, positionForNewCapture(this.getTasks()), this.clock, id);
+    const position = positionForNewCapture(this.getTasks(), this.newTaskPlacement);
+    const task = createTask(text, position, this.clock, id);
     return this.applyLocal(task);
+  }
+
+  /** Where `capture` puts new tasks. Set from the synced settings by the host. */
+  setNewTaskPlacement(placement: 'top' | 'bottom'): void {
+    this.newTaskPlacement = placement;
+  }
+
+  /**
+   * Delete every completed task that was finished before `cutoff`.
+   *
+   * For the end-of-day clear-out. Deleting rather than hiding means it reaches
+   * every device and stays undoable, exactly like deleting by hand. Tasks
+   * finished after the cutoff are left, so one completed a minute before
+   * midnight on another device's clock is not swept up early.
+   */
+  async clearCompletedBefore(cutoff: Date): Promise<number> {
+    const limit = cutoff.toISOString();
+    const due = this.getCompletedTasks().filter(
+      (task) => task.completedAt !== null && task.completedAt < limit,
+    );
+    for (const task of due) await this.remove(task.id);
+    return due.length;
   }
 
   async setText(id: string, text: string): Promise<Task | null> {

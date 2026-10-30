@@ -66,20 +66,28 @@ export function positionsBetween(
 }
 
 /**
- * New captures land at the top of the list.
+ * Where a new capture lands: the top of the list unless the user chose the
+ * bottom.
  *
- * This is deliberate: the thing just remembered is the thing most at risk of
- * being forgotten, so it belongs where the eye already is.
+ * The top is the default on purpose: the thing just remembered is the thing
+ * most at risk of being forgotten, so it belongs where the eye already is.
+ * Some people read a list as a queue instead, oldest first, and for them the
+ * bottom is where new work belongs.
  */
-export function positionForNewCapture(existing: readonly { position: string }[]): string {
+export function positionForNewCapture(
+  existing: readonly { position: string }[],
+  placement: 'top' | 'bottom' = 'top',
+): string {
   let smallest: string | null = null;
+  let largest: string | null = null;
   for (const t of existing) {
     // Ignore malformed keys when picking the anchor, so one bad row cannot
     // stop new captures — the single thing that must never fail.
     if (!isValidPosition(t.position)) continue;
     if (smallest === null || t.position < smallest) smallest = t.position;
+    if (largest === null || t.position > largest) largest = t.position;
   }
-  return positionBefore(smallest);
+  return placement === 'bottom' ? positionAfter(largest) : positionBefore(smallest);
 }
 
 export function compareByPosition(a: { position: string }, b: { position: string }): number {

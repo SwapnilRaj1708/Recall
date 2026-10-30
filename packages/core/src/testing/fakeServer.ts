@@ -1,6 +1,7 @@
 import { isNewer } from '../model/clock.js';
 import { withDerivedUpdatedAt } from '../model/merge.js';
 import type { Task } from '../model/types.js';
+import type { SettingsRemote, StampedSettings } from '../settings/store.js';
 import {
   AuthSyncError,
   PermanentSyncError,
@@ -32,6 +33,30 @@ export class FakeServer {
   private rows = new Map<string, StoredRow>();
   private subscribers = new Set<Subscriber>();
   private sequence = 0;
+  private settings = new Map<string, StampedSettings>();
+  private settingsSubscribers = new Set<(userId: string, all: StampedSettings) => void>();
+
+  /** The same per-key merge as `put_settings`, newest stamp winning. */
+  putSettings(userId: string, patch: StampedSettings): StampedSettings {
+    const current = { ...(this.settings.get(userId) ?? {}) };
+    for (const [key, incoming] of Object.entries(patch)) {
+      if (!incoming) continue;
+      const existing = current[key];
+      if (!existing || incoming.t > existing.t) current[key] = structuredClone(incoming);
+    }
+    this.settings.set(userId, current);
+    for (const subscriber of this.settingsSubscribers) subscriber(userId, structuredClone(current));
+    return structuredClone(current);
+  }
+
+  getSettings(userId: string): StampedSettings {
+    return structuredClone(this.settings.get(userId) ?? {});
+  }
+
+  subscribeSettings(listener: (userId: string, all: StampedSettings) => void): () => void {
+    this.settingsSubscribers.add(listener);
+    return () => this.settingsSubscribers.delete(listener);
+  }
 
   /** Rejects rows whose text is empty, mirroring the column CHECK constraint. */
   validateText = true;
@@ -156,7 +181,7 @@ export type FailureMode = 'none' | 'offline' | 'auth' | 'permanent';
  * network, expire the session, drop the realtime channel, duplicate or reorder
  * delivery.
  */
-export class FakeRemote implements RemoteAdapter {
+export class FakeRemote implements RemoteAdapter, SettingsRemote {
   failureMode: FailureMode = 'none';
   /** Deliver every realtime payload twice, to prove duplicates are harmless. */
   duplicateRealtime = false;
@@ -223,6 +248,22 @@ export class FakeRemote implements RemoteAdapter {
       this.unsubscribeServer = null;
       this.realtimeConnected = false;
     };
+  }
+
+  async fetchSettings(): Promise<StampedSettings> {
+    const userId = this.guard();
+    return this.server.getSettings(userId);
+  }
+
+  async putSettings(patch: StampedSettings): Promise<StampedSettings> {
+    const userId = this.guard();
+    return this.server.putSettings(userId, patch);
+  }
+
+  subscribeSettings(onChange: (all: StampedSettings) => void): () => void {
+    return this.server.subscribeSettings((userId, all) => {
+      if (this.realtimeConnected && userId === this.userId) onChange(all);
+    });
   }
 
   connectRealtime(): void {
