@@ -6,15 +6,15 @@
   a collection widget each child can carry its own fill-in intent, which is what
   makes that possible without a separate button per row.
 
-  Horizontal geometry, from the widget's left edge: about 4.3dp of space, the
-  dot (about 3.7dp across), the same 4.3dp again, then the text with no padding
-  of its own. The dot's tap target is everything left of the text, so it starts
-  at the very edge of the widget; the root frame has no left padding for that
-  reason.
+  Horizontal geometry, from the widget's left edge: about 10.7dp of space (half
+  the 21.3dp the row had originally), the dot (about 3.7dp across), 4.3dp, then
+  the text with no padding of its own. The dot's tap target is everything left
+  of the text, so it starts at the very edge of the widget; the root frame has
+  no left padding for that reason.
 
   The dot drawable keeps its old artwork, drawn at half size: a 10dp image
   whose circle spans 7.6 to 16.4 of a 24-unit viewport, so the circle starts
-  3.17dp in, and a 1.1dp margin brings its left edge to 4.27dp.
+  3.17dp in, and a 7.5dp margin brings its left edge to 10.67dp.
 
   Vertically the row matches the web surfaces, which put 13.5px type in a 28px
   row: here 14sp type in a 32dp row. The text's vertical padding is what a
@@ -30,7 +30,7 @@
 
     <FrameLayout
         android:id="@+id/item_toggle"
-        android:layout_width="12.2dp"
+        android:layout_width="18.6dp"
         android:layout_height="match_parent"
         android:minHeight="32dp">
 
@@ -39,7 +39,7 @@
             android:layout_width="10dp"
             android:layout_height="10dp"
             android:layout_gravity="start|center_vertical"
-            android:layout_marginStart="1.1dp"
+            android:layout_marginStart="7.5dp"
             android:src="@drawable/ic_widget_dot" />
     </FrameLayout>
 

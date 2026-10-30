@@ -8,10 +8,10 @@
   cell, and add filling the rest, so the control you reach for most often is
   the larger one and the one you rarely want cannot be hit by accident.
 
-  The two overlap on purpose. The list runs under the left half of the strip,
-  so a task's text can use that space instead of stopping short of it, and the
-  strip is the later child, so it is drawn on top and takes every tap in the
-  shared band: a tap there adds or syncs, never edits. The strip has no
+  The two overlap on purpose. The list runs under the left quarter of the
+  strip, so a task's text can use that space instead of stopping short of it,
+  and the strip is the later child, so it is drawn on top and takes every tap
+  in the shared band: a tap there adds or syncs, never edits. The strip has no
   background of its own, which is what lets the text show through.
 
   No left padding on the frame: each row supplies its own left spacing, so the
@@ -30,11 +30,11 @@
     android:paddingBottom="4dp"
     android:paddingEnd="4dp">
 
-    <!-- Ends halfway across the 30dp strip, which overlaps it from above. -->
+    <!-- Ends a quarter of the way across the 30dp strip, which overlaps it from above. -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginEnd="15dp">
+        android:layout_marginEnd="22.5dp">
 
         <ListView
             android:id="@+id/widget_list"
