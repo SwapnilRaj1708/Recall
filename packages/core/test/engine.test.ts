@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStorage } from '../src/storage/memory.js';
+import type { StorageAdapter } from '../src/storage/types.js';
+import { PEER_FLUSH_GRACE_MS } from '../src/sync/engine.js';
 import { FakeServer } from '../src/testing/fakeServer.js';
 import { ManualTimers, makeClient, settle, textsOf } from './helpers.js';
 
@@ -759,5 +761,152 @@ describe('knowing which tasks are only on this device', () => {
     // Nothing here originated locally, so nothing should be marked.
     expect(b.engine.getOpenTasks()).toHaveLength(1);
     expect(b.engine.getUnsyncedIds().size).toBe(0);
+  });
+});
+
+describe('sharing one store with other contexts', () => {
+  /**
+   * The extension's popup and service worker, and the desktop's three windows,
+   * each run an engine over one shared store, and each is told when another
+   * writes to it. What differs is whether the writer is told about its own
+   * write: chrome.storage does tell it, IndexedDB's BroadcastChannel does not.
+   * That difference is exactly what made captures in the extension popup
+   * silently never sync, so both shapes are exercised here.
+   *
+   * Notifications are delivered synchronously, before the write resolves to
+   * the caller — the ordering in which the loss actually happened.
+   */
+  class SharedStore {
+    readonly base = new MemoryStorage();
+    private readonly views = new Set<{ listeners: Set<() => void> }>();
+
+    constructor(private readonly notifyWriter: boolean) {}
+
+    view(): StorageAdapter {
+      const self = { listeners: new Set<() => void>() };
+      this.views.add(self);
+      const base = this.base;
+      const fire = () => {
+        for (const view of this.views) {
+          if (view === self && !this.notifyWriter) continue;
+          for (const listener of view.listeners) listener();
+        }
+      };
+      return {
+        name: 'shared',
+        loadTasks: () => base.loadTasks(),
+        saveTasks: async (tasks) => {
+          await base.saveTasks(tasks);
+          fire();
+        },
+        deleteTasks: async (ids) => {
+          await base.deleteTasks(ids);
+          fire();
+        },
+        loadOutbox: () => base.loadOutbox(),
+        saveOutbox: async (entries) => {
+          await base.saveOutbox(entries);
+          fire();
+        },
+        getMeta: (key) => base.getMeta(key),
+        setMeta: (key, value) => base.setMeta(key, value),
+        watch: (listener) => {
+          self.listeners.add(listener);
+          return () => self.listeners.delete(listener);
+        },
+      };
+    }
+  }
+
+  it('pushes a capture by itself when the store reports the write back to the writer', async () => {
+    const timers = new ManualTimers();
+    const { engine } = makeClient(server, { storage: new SharedStore(true).view(), timers });
+    await engine.start();
+
+    await engine.capture('from the extension popup');
+    await settle();
+    await timers.advance(0);
+
+    expect(textsOf(server.snapshot('user-1'))).toEqual(['from the extension popup']);
+    expect(engine.getUnsyncedIds().size).toBe(0);
+  });
+
+  it('keeps a capture when another window writes at the same moment', async () => {
+    const store = new SharedStore(false);
+    const widget = makeClient(server, { storage: store.view() });
+    const main = makeClient(server, { storage: store.view() });
+    await widget.engine.start();
+    await main.engine.start();
+
+    await Promise.all([
+      widget.engine.capture('from the widget'),
+      main.engine.capture('from the main window'),
+    ]);
+    await settle();
+    await widget.engine.syncNow();
+    await main.engine.syncNow();
+
+    expect(textsOf(server.snapshot('user-1')).sort()).toEqual([
+      'from the main window',
+      'from the widget',
+    ]);
+  });
+
+  it('keeps its own capture when another context overwrites the shared queue', async () => {
+    // Neither store makes "read the queue, change it, write it back" atomic, so
+    // a peer writing at the wrong moment can drop an entry from disk. The
+    // context that queued it must still have it.
+    const store = new SharedStore(false);
+    const window = makeClient(server, { storage: store.view() });
+    const peer = store.view();
+    await window.engine.start();
+
+    await window.engine.capture('queued here');
+    await settle();
+    await peer.saveOutbox([]);
+    await settle();
+    await window.engine.syncNow();
+
+    expect(textsOf(server.snapshot('user-1'))).toEqual(['queued here']);
+  });
+
+  it('sends what a closed popup left queued, without waiting for the next alarm', async () => {
+    const store = new SharedStore(true);
+    // The popup's timers never run: it is closed before its own push goes out.
+    const popup = makeClient(server, { storage: store.view(), timers: new ManualTimers() });
+    const workerTimers = new ManualTimers();
+    const worker = makeClient(server, { storage: store.view(), timers: workerTimers });
+    await worker.engine.start();
+    await popup.engine.start();
+
+    await popup.engine.capture('captured just before closing');
+    await settle();
+    popup.engine.stop();
+
+    await workerTimers.advance(PEER_FLUSH_GRACE_MS);
+
+    expect(textsOf(server.snapshot('user-1'))).toEqual(['captured just before closing']);
+  });
+
+  it('leaves a live peer to send its own work, rather than every context pushing it', async () => {
+    const store = new SharedStore(true);
+    const popupTimers = new ManualTimers();
+    const workerTimers = new ManualTimers();
+    const popup = makeClient(server, { storage: store.view(), timers: popupTimers });
+    const worker = makeClient(server, { storage: store.view(), timers: workerTimers });
+    await worker.engine.start();
+    await popup.engine.start();
+
+    await popup.engine.capture('sent by the popup');
+    await settle();
+    // The worker gets a turn before the popup's push lands, as it would while
+    // that request is still on the network.
+    await workerTimers.advance(PEER_FLUSH_GRACE_MS / 3);
+    await popupTimers.advance(0);
+    await workerTimers.advance(PEER_FLUSH_GRACE_MS);
+
+    expect(textsOf(server.snapshot('user-1'))).toEqual(['sent by the popup']);
+    expect(popup.remote.pushCount).toBe(1);
+    expect(worker.remote.pushCount).toBe(0);
   });
 });

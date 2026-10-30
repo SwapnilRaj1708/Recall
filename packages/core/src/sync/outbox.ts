@@ -1,4 +1,4 @@
-import { isSameVersion } from '../model/merge.js';
+import { isSameVersion, mergeTask } from '../model/merge.js';
 import type { Task } from '../model/types.js';
 import type { StorageAdapter } from '../storage/types.js';
 import type { OutboxEntry } from './types.js';
@@ -26,39 +26,96 @@ export class Outbox {
    */
   private acknowledged = new Map<string, Task>();
 
+  /**
+   * Entries queued by this instance that the server has not accepted yet.
+   *
+   * The queue on disk is shared — the extension's popup and worker, and the
+   * desktop's three windows, all read and rewrite it — and neither store makes
+   * that read-modify-write atomic. Two things followed from that, and both lost
+   * a capture outright: the task stayed in the list looking saved, and never
+   * reached the server.
+   *
+   * - A reload replacing memory with the disk before this instance's own write
+   *   had landed. In the extension this happened on every capture, because
+   *   Chrome delivers a storage change event to the context that made the
+   *   change, and it can arrive before the write resolves.
+   * - Two contexts writing the queue back at the same moment, the second
+   *   overwriting the first.
+   *
+   * So what this instance queued is held here until it is acknowledged, and is
+   * folded back in on every read and every write. The disk can lose an entry
+   * for a moment; the context that queued it cannot.
+   */
+  private own = new Map<string, OutboxEntry>();
+
   constructor(private readonly storage: StorageAdapter) {}
 
+  /**
+   * Read the shared queue.
+   *
+   * The disk is the authority for everything another context queued — if an
+   * entry is gone, someone had it accepted. What this instance queued is folded
+   * back in, and an entry this instance had accepted is not brought back just
+   * because the disk has not caught up with the acknowledgement yet.
+   */
   async load(): Promise<void> {
-    this.entries = new Map((await this.storage.loadOutbox()).map((e) => [e.taskId, e]));
+    const loaded = new Map((await this.storage.loadOutbox()).map((e) => [e.taskId, e]));
+    this.foldOwn(loaded);
+    this.dropAcknowledged(loaded);
+    this.entries = loaded;
   }
 
   /**
    * Write the queue back, merging with whatever is already there.
    *
-   * In the desktop app the widget and the main window are separate JavaScript
-   * contexts sharing one IndexedDB, so they share this queue. A blind
-   * overwrite would let a capture made in one window silently delete a capture
-   * made in the other a moment earlier — and the lost item would still be in
-   * the task list, so it would look saved while never reaching the server.
-   * That is the exact failure this app cannot have.
-   *
-   * Merging: entries on disk are the baseline, ours win for tasks we hold, and
-   * an entry we had accepted is only dropped if the stored version is the one
-   * we actually pushed. Anything queued elsewhere while we were in flight
-   * survives.
+   * Entries on disk are the baseline, so anything queued elsewhere while this
+   * instance was busy survives. This instance's own entries are folded in, and
+   * an entry it had accepted is dropped only if the stored version is the one
+   * it actually pushed. Entries it merely read from another context are not
+   * written back: if the disk no longer has one, that context had it accepted.
    */
   async persist(): Promise<void> {
     const merged = new Map<string, OutboxEntry>();
     for (const entry of await this.storage.loadOutbox()) merged.set(entry.taskId, entry);
-    for (const [taskId, entry] of this.entries) merged.set(taskId, entry);
-
-    for (const [taskId, accepted] of this.acknowledged) {
-      const stored = merged.get(taskId);
-      if (stored && isSameVersion(stored.snapshot, accepted)) merged.delete(taskId);
-    }
+    this.foldOwn(merged);
+    this.dropAcknowledged(merged);
     this.acknowledged.clear();
 
     await this.storage.saveOutbox([...merged.values()]);
+  }
+
+  /**
+   * Add this instance's entries to `queue`, and hold the results.
+   *
+   * Where the queue already has another version of the same task — edited in
+   * another window too — the two are merged field by field, the same rule the
+   * server applies, so neither edit is lost from what gets pushed.
+   */
+  private foldOwn(queue: Map<string, OutboxEntry>): void {
+    for (const [taskId, mine] of this.own) {
+      const theirs = queue.get(taskId);
+      const entry =
+        !theirs || isSameVersion(theirs.snapshot, mine.snapshot)
+          ? mine
+          : {
+              ...mine,
+              snapshot: mergeTask(theirs.snapshot, mine.snapshot),
+              queuedAt: theirs.queuedAt < mine.queuedAt ? theirs.queuedAt : mine.queuedAt,
+              status: theirs.status === 'pending' ? 'pending' : mine.status,
+            };
+      queue.set(taskId, entry);
+      this.own.set(taskId, entry);
+      // Memory holds the same object, so what is pushed next is what was
+      // written, and a failure recorded against it is recorded on both.
+      this.entries.set(taskId, entry);
+    }
+  }
+
+  private dropAcknowledged(queue: Map<string, OutboxEntry>): void {
+    for (const [taskId, accepted] of this.acknowledged) {
+      const held = queue.get(taskId);
+      if (held && isSameVersion(held.snapshot, accepted)) queue.delete(taskId);
+    }
   }
 
   size(): number {
@@ -96,7 +153,7 @@ export class Outbox {
    */
   enqueue(task: Task, queuedAt: string): void {
     const existing = this.entries.get(task.id);
-    this.entries.set(task.id, {
+    const entry: OutboxEntry = {
       taskId: task.id,
       snapshot: task,
       queuedAt: existing?.queuedAt ?? queuedAt,
@@ -105,7 +162,9 @@ export class Outbox {
       // stranding the user's newest change behind an old failure.
       status: 'pending',
       lastError: null,
-    });
+    };
+    this.entries.set(task.id, entry);
+    this.own.set(task.id, entry);
   }
 
   /**
@@ -119,7 +178,10 @@ export class Outbox {
       // can tell "accepted" apart from "queued by another window".
       this.acknowledged.set(task.id, task);
       const entry = this.entries.get(task.id);
-      if (entry && isSameVersion(entry.snapshot, task)) this.entries.delete(task.id);
+      if (entry && isSameVersion(entry.snapshot, task)) {
+        this.entries.delete(task.id);
+        this.own.delete(task.id);
+      }
     }
   }
 
@@ -160,7 +222,10 @@ export class Outbox {
     }
   }
 
+  /** Forget everything held here, written or not — for sign-out, not for syncing. */
   clear(): void {
     this.entries.clear();
+    this.own.clear();
+    this.acknowledged.clear();
   }
 }

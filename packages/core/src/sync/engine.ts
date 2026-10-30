@@ -578,6 +578,16 @@ export class SyncEngine {
       await this.outbox.load();
       this.refreshCounts();
       this.notify();
+
+      // Work another context queued is normally that context's to send, and it
+      // will, within a moment. But the extension's popup is destroyed the
+      // instant it loses focus, so a capture made just before closing it can be
+      // left on disk unsent. Whoever is still running picks it up — after a
+      // grace period, so a live peer gets there first and this finds nothing
+      // left to send, rather than every window pushing every change.
+      if (this.outbox.pendingCount() > 0 && this.retryHandle === null) {
+        this.scheduleFlush(PEER_FLUSH_GRACE_MS);
+      }
     } catch {
       // A peer notification we cannot service is not worth surfacing to the user.
     }
@@ -696,6 +706,9 @@ export class SyncEngine {
     await this.storage.saveOutbox([]);
     await this.storage.setMeta(META_CURSOR, null);
     await this.storage.setMeta(META_LAST_SYNCED, null);
+    // Cleared, not just reloaded: a reload deliberately keeps what this
+    // instance queued, and after a reset there must be nothing to keep.
+    this.outbox.clear();
     await this.outbox.load();
     this.notify();
     this.broadcast();
@@ -709,6 +722,9 @@ export class SyncEngine {
 
 /** Default bound on any single local-storage operation. Overridable for tests. */
 const STORAGE_TIMEOUT_MS = 4_000;
+
+/** How long to leave another context's queued work for it to send itself. */
+export const PEER_FLUSH_GRACE_MS = 3_000;
 
 /**
  * Reject rather than hang.
