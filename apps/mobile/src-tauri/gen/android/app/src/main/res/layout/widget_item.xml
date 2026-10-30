@@ -6,14 +6,19 @@
   a collection widget each child can carry its own fill-in intent, which is what
   makes that possible without a separate button per row.
 
-  The dot's target is far wider than the dot itself: this is the control most
-  likely to be tapped without looking.
+  Horizontal geometry, from the widget's left edge: about 4.3dp of space, the
+  dot (about 3.7dp across), the same 4.3dp again, then the text with no padding
+  of its own. The dot's tap target is everything left of the text, so it starts
+  at the very edge of the widget; the root frame has no left padding for that
+  reason.
 
-  Row geometry matches the web surfaces, which put 13.5px type in a 28px row:
-  here 14sp type in a 32dp row, so the space between one line and the next is
-  the same fraction of the text on the home screen as it is in the app. The
-  text's vertical padding is what a wrapped row gets; a single line is centred
-  by the row's minHeight.
+  The dot drawable keeps its old artwork, drawn at half size: a 10dp image
+  whose circle spans 7.6 to 16.4 of a 24-unit viewport, so the circle starts
+  3.17dp in, and a 1.1dp margin brings its left edge to 4.27dp.
+
+  Vertically the row matches the web surfaces, which put 13.5px type in a 28px
+  row: here 14sp type in a 32dp row. The text's vertical padding is what a
+  wrapped row gets; a single line is centred by the row's minHeight.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -25,15 +30,16 @@
 
     <FrameLayout
         android:id="@+id/item_toggle"
-        android:layout_width="38dp"
+        android:layout_width="12.2dp"
         android:layout_height="match_parent"
         android:minHeight="32dp">
 
         <ImageView
             android:id="@+id/item_dot"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_gravity="center"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="1.1dp"
             android:src="@drawable/ic_widget_dot" />
     </FrameLayout>
 
@@ -44,7 +50,6 @@
         android:layout_weight="1"
         android:paddingTop="6dp"
         android:paddingBottom="6dp"
-        android:paddingEnd="8dp"
         android:textSize="14sp"
         android:textColor="@color/widget_text"
         android:maxLines="2"
