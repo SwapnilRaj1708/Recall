@@ -88,10 +88,17 @@ The same interactions everywhere:
 | Reorder | Drag the handle on the left of a row. |
 
 New captures go to the **top** of the list — the thing you just remembered is
-the thing most at risk of being forgotten again.
+the thing most at risk of being forgotten again. If you read your list as a
+queue instead, turn on **Settings → List → Add tasks to the bottom**.
 
 Completed tasks are hidden by default. Turn on **Show completed tasks** in
-settings to keep them visible underneath.
+settings to keep them visible underneath. Or turn on **Clear completed tasks
+daily**, and at midnight everything you finished is deleted — recoverably, like
+any delete. If no device is open at midnight, it happens the next time one is,
+and the phone widget stops showing yesterday's finished tasks straight away.
+
+Both of those follow your account, like Customize below: set them once and
+every device agrees.
 
 Deleted tasks are recoverable for 30 days, not just until the toast fades.
 
@@ -226,7 +233,6 @@ Settings → Appearance, on every surface:
 
 - **Theme** — light, dark, or follow Windows.
 - **Accent** — six presets.
-- **Transparency** — how much of your desktop shows through the widget.
 - **Row height** — from compact to comfortable.
 - **Text size** — 85% to 140%.
 
@@ -243,9 +249,31 @@ widget on top is the widget's own setting: the pin on the widget and the switch
 in the main window's settings are two controls for the same thing, and the
 widget comes back exactly as you left it.
 
-If you want something the sliders do not cover — a different accent colour,
-different corner rounding, more spacing between rows — it is all in
-`packages/ui/src/tokens.css`, and a change there applies to all four surfaces at
+### Customize
+
+Settings → Customize styles the widgets and the task list itself, and unlike
+Appearance it follows your account: choose a font on the desktop and your phone
+uses it too.
+
+- **Widget** — background colour and transparency, border colour (or none), and
+  rounded corners (none, small, medium, large). These apply to both the Windows
+  widget and the phone's home-screen widget.
+- **Tasks** — font size, font colour, completed font colour, typeface (system,
+  serif, mono, condensed), weight, italic, and margins on each side of a row.
+  These apply to every list: the apps, the website, the extension, and both
+  widgets.
+
+Every option has **Default**, which is not a fixed value but "however this
+surface looked before" — so the two widgets keep their own natural corners and
+borders, and text keeps following light and dark mode, until you choose
+otherwise. The transparency slider that used to sit in Appearance lives here
+now, beside the background it always applied to.
+
+On the phone, colours, corners and borders need Android 12 or newer; on older
+versions the widget keeps its original look.
+
+If you want something the controls do not cover, it is all in
+`packages/ui/src/tokens.css`, and a change there applies to every surface at
 once.
 
 ---

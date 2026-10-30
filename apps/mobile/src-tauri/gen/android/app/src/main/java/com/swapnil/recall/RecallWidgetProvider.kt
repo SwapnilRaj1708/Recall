@@ -6,7 +6,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
+import android.os.Build
+import android.view.View
 import android.widget.RemoteViews
 
 /**
@@ -42,6 +45,54 @@ class RecallWidgetProvider : AppWidgetProvider() {
         render(context, manager, widgetId)
     }
 
+    /**
+     * Customize's widget options: background colour and transparency, border,
+     * and corners.
+     *
+     * A drawable's colour and radius cannot be set from another process, so
+     * each corner size has its own white shape, and the colour is applied as a
+     * tint. Tinting a background through RemoteViews needs Android 12; older
+     * versions keep the widget's original look, which is also exactly what the
+     * defaults produce. Everything is set on every render, default included,
+     * because the launcher reapplies onto the existing views and a tint left
+     * from an earlier render would otherwise stay.
+     */
+    private fun applyLook(context: Context, views: RemoteViews, look: WidgetLook) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+
+        val fill = when (look.cornerRadiusDp) {
+            0 -> R.drawable.widget_fill_none
+            6 -> R.drawable.widget_fill_small
+            12 -> R.drawable.widget_fill_medium
+            else -> R.drawable.widget_fill_large
+        }
+        views.setInt(R.id.widget_root, "setBackgroundResource", fill)
+        views.setColorStateList(
+            R.id.widget_root,
+            "setBackgroundTintList",
+            ColorStateList.valueOf(look.backgroundArgb(context)),
+        )
+
+        val border = look.border
+        if (border == null) {
+            views.setViewVisibility(R.id.widget_border, View.GONE)
+        } else {
+            val stroke = when (look.cornerRadiusDp) {
+                0 -> R.drawable.widget_stroke_none
+                6 -> R.drawable.widget_stroke_small
+                12 -> R.drawable.widget_stroke_medium
+                else -> R.drawable.widget_stroke_large
+            }
+            views.setViewVisibility(R.id.widget_border, View.VISIBLE)
+            views.setInt(R.id.widget_border, "setBackgroundResource", stroke)
+            views.setColorStateList(
+                R.id.widget_border,
+                "setBackgroundTintList",
+                ColorStateList.valueOf(border or (0xFF shl 24)),
+            )
+        }
+    }
+
     private fun render(context: Context, manager: AppWidgetManager, widgetId: Int) {
         val state = WidgetStateStore.read(context)
         val views = RemoteViews(context.packageName, R.layout.widget_root)
@@ -55,6 +106,7 @@ class RecallWidgetProvider : AppWidgetProvider() {
         }
         views.setRemoteAdapter(R.id.widget_list, adapter)
         views.setEmptyView(R.id.widget_list, R.id.widget_empty)
+        applyLook(context, views, state.look)
 
         views.setTextViewText(
             R.id.widget_empty,

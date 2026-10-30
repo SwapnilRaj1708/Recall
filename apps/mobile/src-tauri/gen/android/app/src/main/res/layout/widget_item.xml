@@ -20,7 +20,16 @@
   row: here 14sp type in a 32dp row. The text's vertical padding is what a
   wrapped row gets; a single line is centred by the row's minHeight.
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  The outer frame carries Customize's task margins as padding, so the space
+  around a row sits outside its tap highlight, as a margin does in the app.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/item_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
@@ -55,3 +64,4 @@
         android:maxLines="2"
         android:ellipsize="end" />
 </LinearLayout>
+</FrameLayout>

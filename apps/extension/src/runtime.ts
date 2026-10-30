@@ -1,6 +1,7 @@
 import {
   AuthController,
   ChromeStorage,
+  SettingsStore,
   SupabaseRemote,
   SyncEngine,
   createRecallClient,
@@ -64,6 +65,8 @@ export const chromeOAuthLauncher: OAuthLauncher = {
 export interface BackgroundRuntime {
   engine: SyncEngine;
   auth: AuthController;
+  /** For where captures land and the end-of-day clear-out; see background.ts. */
+  settings: SettingsStore;
 }
 
 let runtime: Promise<BackgroundRuntime> | null = null;
@@ -95,9 +98,14 @@ export function getBackgroundRuntime(): Promise<BackgroundRuntime> {
       channelName: null,
     });
 
+    // Shares chrome.storage with the popup, so a setting changed there is
+    // here too; BroadcastChannel tells this worker when, if it is awake.
+    const settings = new SettingsStore({ storage: new ChromeStorage(), remote });
+
     await auth.init();
     await engine.start();
-    return { engine, auth };
+    await settings.start();
+    return { engine, auth, settings };
   })();
 
   return runtime;

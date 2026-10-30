@@ -1,3 +1,4 @@
+import { DEFAULT_SETTINGS } from '@recall/core';
 import { describe, expect, it, vi } from 'vitest';
 import {
   applyWidgetOps,
@@ -37,7 +38,7 @@ const task = (id: string, text: string, completed = false) =>
 describe('the snapshot the widget draws', () => {
   it('carries only what the widget renders', () => {
     const state = buildWidgetState([task('a', 'Buy milk')], true);
-    expect(state.tasks).toEqual([{ id: 'a', text: 'Buy milk', completed: false }]);
+    expect(state.tasks).toEqual([{ id: 'a', text: 'Buy milk', completed: false, completedAt: null }]);
   });
 
   it('records whether anyone is signed in', () => {
@@ -50,6 +51,35 @@ describe('the snapshot the widget draws', () => {
   it('caps a very long list, which the widget could not show anyway', () => {
     const many = Array.from({ length: 500 }, (_, index) => task(`t${index}`, `task ${index}`));
     expect(buildWidgetState(many, true).tasks.length).toBe(200);
+  });
+});
+
+describe('the settings the widget follows', () => {
+  it('carries the synced settings, which the widget cannot read for itself', () => {
+    const settings = { ...DEFAULT_SETTINGS, addToBottom: true, taskColor: '#d9a441' };
+    const state = buildWidgetState([task('a', 'Buy milk')], true, settings);
+    expect(state.settings.addToBottom).toBe(true);
+    expect(state.settings.taskColor).toBe('#d9a441');
+  });
+
+  it('defaults to the settings that change nothing', () => {
+    expect(buildWidgetState([], true).settings).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('carries when each task was finished, for the end-of-day clear-out', () => {
+    const done = { ...(task('a', 'Done') as object), completed: true, completedAt: '2026-01-01T09:00:00.000Z' };
+    expect(buildWidgetState([done as never], true).tasks[0]!.completedAt).toBe(
+      '2026-01-01T09:00:00.000Z',
+    );
+  });
+
+  it('writes a new snapshot when only a setting changed', () => {
+    const before = buildWidgetState([task('a', 'Buy milk')], true);
+    const after = buildWidgetState([task('a', 'Buy milk')], true, {
+      ...DEFAULT_SETTINGS,
+      widgetCorners: 'small',
+    });
+    expect(sameWidgetState(before, after)).toBe(false);
   });
 });
 

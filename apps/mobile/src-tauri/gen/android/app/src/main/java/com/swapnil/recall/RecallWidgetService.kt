@@ -2,6 +2,7 @@ package com.swapnil.recall
 
 import android.content.Intent
 import android.graphics.Paint
+import android.util.TypedValue
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 
@@ -24,22 +25,26 @@ private class RecallWidgetFactory(
 ) : RemoteViewsService.RemoteViewsFactory {
 
     private var tasks: List<WidgetTask> = emptyList()
+    private var look: WidgetLook = WidgetLook.DEFAULT
 
     override fun onCreate() {
-        tasks = current()
+        refresh()
     }
 
     /** Called on every refresh, before the rows are read. */
     override fun onDataSetChanged() {
-        tasks = current()
+        refresh()
     }
 
     /**
      * The app's snapshot with anything tapped on the widget laid over it,
      * so a row reflects the tap immediately rather than when the app next runs.
      */
-    private fun current(): List<WidgetTask> =
-        WidgetActions.overlay(WidgetStateStore.read(context), WidgetActions.read(context))
+    private fun refresh() {
+        val state = WidgetStateStore.read(context)
+        look = state.look
+        tasks = WidgetActions.overlay(state, WidgetActions.read(context))
+    }
 
     override fun onDestroy() {
         tasks = emptyList()
@@ -58,7 +63,13 @@ private class RecallWidgetFactory(
         // Links are underlined, as in the app. They cannot be tapped on the
         // widget itself — a collection row has one tap target per child, and
         // the text's is the editor — so the editor offers to open them.
-        views.setTextViewText(R.id.item_text, Links.underlined(task.text))
+        views.setTextViewText(R.id.item_text, look.styled(Links.underlined(task.text)))
+        // Set every time, default included: the launcher reuses row views, so
+        // a value set on one row would otherwise linger on the next.
+        views.setTextViewTextSize(R.id.item_text, TypedValue.COMPLEX_UNIT_SP, look.fontSizeSp ?: 14f)
+        val density = context.resources.displayMetrics.density
+        val (left, top, right, bottom) = look.margins.map { (it * density).toInt() }
+        views.setViewPadding(R.id.item_root, left, top, right, bottom)
 
         // A completed task reads as done three ways at once: the dot loses its
         // colour, the text greys out, and it is struck through. On a panel
@@ -67,10 +78,7 @@ private class RecallWidgetFactory(
             R.id.item_dot,
             if (task.completed) R.drawable.ic_widget_dot_done else R.drawable.ic_widget_dot,
         )
-        views.setTextColor(
-            R.id.item_text,
-            context.getColor(if (task.completed) R.color.widget_text_done else R.color.widget_text),
-        )
+        views.setTextColor(R.id.item_text, look.textColor(context, task.completed))
         // RemoteViews has no strikethrough setter; setting the paint flags
         // directly is the supported way to reach it from another process.
         views.setInt(

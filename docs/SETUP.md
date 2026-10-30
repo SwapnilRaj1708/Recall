@@ -66,12 +66,19 @@ nothing else to add.
 2. Paste the entire contents of [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql).
 3. Run it. You should see `Success. No rows returned`.
 4. New query again, paste [`supabase/migrations/0002_position_collation.sql`](../supabase/migrations/0002_position_collation.sql), run it.
+5. New query again, paste [`supabase/migrations/0003_user_settings.sql`](../supabase/migrations/0003_user_settings.sql), run it.
 
 Together these create the `tasks` table, the row-level security policies, the
-`push_tasks` merge function, the ordering collation, and realtime.
+`push_tasks` merge function, the ordering collation, the synced settings table
+with its `put_settings` merge function, and realtime for both tables.
 
-Run the migrations in order, and run both. Both are idempotent, so re-running
-either is harmless.
+Run the migrations in order, and run all three. Each is idempotent, so
+re-running any of them is harmless.
+
+Upgrading an existing project: if you set Recall up before version 2, only
+`0003_user_settings.sql` is new. Until it has been run, settings still work on
+each device but stay on that device; they are sent the first time a sync finds
+the table, so nothing chosen in the meantime is lost.
 
 ### B3. Collect the two values
 

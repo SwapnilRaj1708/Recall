@@ -16,6 +16,8 @@ data class WidgetTask(
     val id: String,
     val text: String,
     val completed: Boolean,
+    /** ISO instant, for the end-of-day clear-out; null when not known. */
+    val completedAt: String? = null,
 )
 
 data class WidgetState(
@@ -23,6 +25,8 @@ data class WidgetState(
     val tasks: List<WidgetTask>,
     /** False when no snapshot has been written yet — a first run, not an empty list. */
     val present: Boolean,
+    /** The account's settings, as far as the widget uses them. */
+    val look: WidgetLook = WidgetLook.DEFAULT,
 ) {
     companion object {
         val MISSING = WidgetState(signedIn = false, tasks = emptyList(), present = false)
@@ -66,7 +70,14 @@ object WidgetStateStore {
                 val id = item.optString("id")
                 val text = item.optString("text")
                 if (id.isEmpty() || text.isEmpty()) continue
-                add(WidgetTask(id = id, text = text, completed = item.optBoolean("completed")))
+                add(
+                    WidgetTask(
+                        id = id,
+                        text = text,
+                        completed = item.optBoolean("completed"),
+                        completedAt = item.optString("completedAt").takeIf { it.isNotEmpty() && it != "null" },
+                    )
+                )
             }
         }
 
@@ -74,6 +85,9 @@ object WidgetStateStore {
             signedIn = root.optBoolean("signedIn"),
             tasks = tasks,
             present = true,
+            // Absent from snapshots written before settings existed; the
+            // defaults are exactly how the widget looked then.
+            look = WidgetLook.parse(root.optJSONObject("settings")),
         )
     }
 }

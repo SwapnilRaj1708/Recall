@@ -1,4 +1,4 @@
-import type { Task } from '@recall/core';
+import { DEFAULT_SETTINGS, type SyncedSettings, type Task } from '@recall/core';
 import { invoke } from '@tauri-apps/api/core';
 
 /**
@@ -18,6 +18,8 @@ export interface WidgetTask {
   id: string;
   text: string;
   completed: boolean;
+  /** For the end-of-day clear-out, which the widget applies too. */
+  completedAt: string | null;
 }
 
 export interface WidgetState {
@@ -27,6 +29,12 @@ export interface WidgetState {
   publishedAt: string;
   signedIn: boolean;
   tasks: WidgetTask[];
+  /**
+   * The account's synced settings: where captures land, the end-of-day
+   * clear-out, and Customize. The widget cannot reach the settings store any
+   * more than it can reach the task list, so it gets them the same way.
+   */
+  settings: SyncedSettings;
 }
 
 /**
@@ -36,7 +44,11 @@ export interface WidgetState {
  */
 const MAX_TASKS = 200;
 
-export function buildWidgetState(tasks: Task[], signedIn: boolean): WidgetState {
+export function buildWidgetState(
+  tasks: Task[],
+  signedIn: boolean,
+  settings: SyncedSettings = DEFAULT_SETTINGS,
+): WidgetState {
   return {
     version: 1,
     publishedAt: new Date().toISOString(),
@@ -45,7 +57,9 @@ export function buildWidgetState(tasks: Task[], signedIn: boolean): WidgetState 
       id: task.id,
       text: task.text,
       completed: task.completed,
+      completedAt: task.completedAt,
     })),
+    settings,
   };
 }
 
@@ -53,10 +67,16 @@ export function buildWidgetState(tasks: Task[], signedIn: boolean): WidgetState 
 export function sameWidgetState(a: WidgetState | null, b: WidgetState): boolean {
   if (!a) return false;
   if (a.signedIn !== b.signedIn) return false;
+  if (JSON.stringify(a.settings) !== JSON.stringify(b.settings)) return false;
   if (a.tasks.length !== b.tasks.length) return false;
   return a.tasks.every((task, index) => {
     const other = b.tasks[index]!;
-    return task.id === other.id && task.text === other.text && task.completed === other.completed;
+    return (
+      task.id === other.id &&
+      task.text === other.text &&
+      task.completed === other.completed &&
+      task.completedAt === other.completedAt
+    );
   });
 }
 

@@ -3,6 +3,7 @@ import {
   FullView,
   RecallProvider,
   useRecall,
+  useSyncedSettings,
   useTaskActions,
   useTasks,
 } from '@recall/app';
@@ -32,6 +33,7 @@ import {
 function WidgetBridge() {
   const { open, completed } = useTasks();
   const { authState, engine } = useRecall();
+  const { settings } = useSyncedSettings();
   const actions = useTaskActions();
   const previous = useRef<WidgetState | null>(null);
   const inFlight = useRef(false);
@@ -95,11 +97,11 @@ function WidgetBridge() {
     const signedIn = authState.status === 'signed-in';
     // Open tasks first: the widget is for what is still to be done, and a
     // small widget shows only the first few rows.
-    const next = buildWidgetState([...open, ...completed], signedIn);
+    const next = buildWidgetState([...open, ...completed], signedIn, settings);
     if (sameWidgetState(previous.current, next)) return;
     previous.current = next;
     void publishWidgetState(next);
-  }, [open, completed, authState]);
+  }, [open, completed, authState, settings]);
 
   return null;
 }

@@ -215,6 +215,27 @@ two windows that float over the desktop, and `opaqueTheme` drops transparency
 everywhere else, where there is nothing behind the surface but the app's own
 background and translucency would only cost legibility.
 
+### Across devices: synced settings
+
+Some settings have to follow the account rather than the machine: where new
+tasks go, the end-of-day clear-out, and Customize. A task captured on the
+phone must land where one captured on the desktop does.
+
+They use the task list's design at a smaller scale. One `user_settings` row per
+account holds every setting with the time it was chosen, and `put_settings`
+merges per key server-side, newest stamp winning, so changing the font on one
+device and the corners on another while apart keeps both. On each device a
+`SettingsStore` applies a change at once, persists it with a dirty flag until
+the server has it, and merges — never overwrites — the copy that the
+extension's popup and worker, or the desktop's windows, share on disk.
+
+Customize reaches the screen as CSS variables (`--rc-task-*`, `--rc-widget-*`)
+with defaults in `tokens.css`. Nothing is written for an untouched setting, so
+"Default" means "however this surface looked before" rather than a frozen
+value. The variables are mirrored to `localStorage` so the pre-paint bootstraps
+can apply them before any module loads. The phone widget gets the settings
+inside the snapshot the app already writes for it, and draws them natively.
+
 ## The phone
 
 `apps/mobile` is a second Tauri application, not a mobile target of the desktop

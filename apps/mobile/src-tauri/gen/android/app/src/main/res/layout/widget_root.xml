@@ -23,6 +23,7 @@
   and the launcher reports only "Couldn't add widget".
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
@@ -100,4 +101,17 @@
                 android:contentDescription="@string/widget_add_description" />
         </FrameLayout>
     </LinearLayout>
+
+    <!--
+      Customize's border, drawn over everything so the list cannot cover it.
+      Not clickable, so taps pass straight through to whatever is beneath.
+    -->
+    <FrameLayout
+        android:id="@+id/widget_border"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="-8dp"
+        android:layout_marginBottom="-8dp"
+        android:layout_marginEnd="-4dp"
+        android:visibility="gone" />
 </FrameLayout>

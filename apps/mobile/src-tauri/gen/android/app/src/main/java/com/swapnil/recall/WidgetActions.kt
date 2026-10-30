@@ -136,8 +136,16 @@ object WidgetActions {
             when (op.kind) {
                 OP_CAPTURE -> {
                     if (tasks.none { it.id == op.id }) {
-                        // Newest first, matching where a capture lands everywhere else.
-                        tasks.add(0, WidgetTask(op.id, op.text.orEmpty(), false))
+                        val task = WidgetTask(op.id, op.text.orEmpty(), false)
+                        if (state.look.addToBottom) {
+                            // The end of the open tasks: the snapshot lists the
+                            // open ones first and the finished ones after.
+                            val firstDone = tasks.indexOfFirst { it.completed }
+                            tasks.add(if (firstDone < 0) tasks.size else firstDone, task)
+                        } else {
+                            // Newest first, matching where a capture lands everywhere else.
+                            tasks.add(0, task)
+                        }
                     }
                 }
                 OP_SET_COMPLETED -> replace(tasks, op.id) { it.copy(completed = op.completed ?: it.completed) }
@@ -146,7 +154,7 @@ object WidgetActions {
             }
         }
 
-        return tasks.filterNot { it.id in removed }
+        return tasks.filterNot { it.id in removed || state.look.clearedOvernight(it) }
     }
 
     private fun replace(tasks: MutableList<WidgetTask>, id: String, change: (WidgetTask) -> WidgetTask) {

@@ -1,4 +1,4 @@
-import { isBlank, normalizeText } from '@recall/core';
+import { isBlank, normalizeText, startOfLocalDay } from '@recall/core';
 import { configured, getBackgroundRuntime } from './runtime.js';
 
 /**
@@ -54,7 +54,13 @@ async function refreshBadge(): Promise<void> {
 async function syncAndRefresh(): Promise<void> {
   if (!configured) return;
   try {
-    const { engine } = await getBackgroundRuntime();
+    const { engine, settings } = await getBackgroundRuntime();
+    await settings.sync();
+    // The end-of-day clear-out, for someone who only ever uses the browser:
+    // the alarm is the one thing guaranteed to run here every day.
+    if (settings.get().autoClearCompleted) {
+      await engine.clearCompletedBefore(startOfLocalDay(new Date()));
+    }
     await engine.syncNow();
   } catch (error) {
     // A failed background sync is expected when offline. The outbox keeps the
@@ -77,7 +83,10 @@ function ensureAlarm(): void {
 
 async function capture(text: string): Promise<boolean> {
   if (isBlank(text)) return false;
-  const { engine } = await getBackgroundRuntime();
+  const { engine, settings } = await getBackgroundRuntime();
+  // Read at the moment of capture: the worker may have been asleep when the
+  // setting changed, and the omnibox must agree with every other surface.
+  engine.setNewTaskPlacement(settings.get().addToBottom ? 'bottom' : 'top');
   await engine.capture(text);
   // Push straight away rather than waiting for the next alarm: the worker may
   // be killed within seconds, and the capture should be on the server by then.
