@@ -83,6 +83,7 @@ The same interactions everywhere:
 | --- | --- |
 | Complete | Click the checkbox. Click again to undo. |
 | Edit | Click the text, type, **Enter** to save, **Esc** to discard. |
+| Open a link | Links (`https://…` or `www.…`) are underlined; click one to open it in a new browser tab. Clicking the rest of the text still edits. On the phone's home-screen widget, tap the task — its links are listed above the editor. |
 | Delete | Hover the row, click the bin. A toast offers **Undo**. |
 | Reorder | Drag the handle on the left of a row. |
 
@@ -157,13 +158,65 @@ in the background about once a minute to keep the badge honest.
 
 ## On your phone
 
-Open your deployed web address in Chrome, then menu → **Add to Home screen**. It
-installs as a normal app, works offline, and syncs when it reconnects.
+Recall has a native Android app with a home-screen widget, so your list can sit
+on the home screen the way it sits on your desktop.
 
-Note that this is an app icon, not a home-screen widget — Android home-screen
-widgets need a native app, which this stack cannot produce. If the always-on-
-screen list on your phone matters more than having one app, keep using your
-current phone app for that and let Recall cover the desktop and browser.
+### Installing
+
+Build the signed release from `apps/mobile`:
+
+```bash
+pnpm android:release
+```
+
+The APK lands in
+`apps/mobile/src-tauri/gen/android/app/build/outputs/apk/universal/release/`.
+With the phone plugged in and USB debugging on, `adb install -r` that file; or
+copy it to the phone and open it there, allowing the install when Android asks.
+
+Every update has to be signed with the same key as the first install — Android
+refuses anything else. Keep `recall-release.jks` and its password safe; losing
+either means uninstalling, and signing in again from scratch.
+
+Open Recall, tap **Continue with Google**, and your list downloads. The app is
+the same one as everywhere else: same list, same settings, same gestures.
+
+### The widget
+
+Long-press the home screen → **Widgets** → **Recall**, and drop it where you
+want it. It resizes from two cells by one up to the whole screen, and scrolls
+when the list is longer than it is.
+
+| Action | How |
+| --- | --- |
+| Complete | Tap the dot on the left. Tap again to undo. Done tasks drop below the open ones, greyed out and struck through. |
+| Edit or delete | Tap the text. The editor opens with the keyboard already up; **OK** saves, **Delete** removes it. |
+| Open a link | Links are underlined. Tap the task, then tap the link shown above the editor. |
+| Add | Tap anywhere on the strip down the right edge below the sync button. |
+| Sync | Tap the arrows at the top of the right edge. |
+
+### How the widget stays in sync
+
+The widget draws from a copy of the list the app leaves for it, so it appears
+instantly and works with no signal. What you do on the widget shows on the
+widget straight away, but it reaches your other devices **the next time the
+Recall app opens** — the app picks up everything the widget queued, first
+thing, every time it comes to the front. The sync button is a shortcut for
+exactly that: it opens the app, which syncs and hands you back.
+
+Changes made elsewhere reach the widget the same way, when the app next runs.
+
+Until it has been sent, a task changed on the widget or offline shows in the
+app in a warm amber, with a marked left edge — and since new captures always go
+to the top, anything just added from the widget is the first thing you see.
+Once the sync lands it turns the normal colour. Nothing needs doing about it; it
+only means "not safe anywhere else yet".
+
+If the widget says **Open Recall to sign in**, that is literally it: the app is
+signed out, and the widget has nothing to show until it is not.
+
+The web app still works on a phone too — open your deployed address in Chrome,
+menu → **Add to Home screen** — but it has no widget.
 
 ---
 

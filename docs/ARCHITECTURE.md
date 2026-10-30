@@ -237,28 +237,38 @@ It runs in the app's process but **outside the webview**, so it cannot read the
 IndexedDB mirror that every other surface uses. That single constraint shapes
 the whole design.
 
-Because the widget is meant to be acted on — tick something off, add something —
-and not merely read, those writes have to reach the server. Queueing them for
-the app to sync later would mean a task ticked off on the home screen stays open
-on the desktop until the phone app is next opened, which for an external-memory
-system is the wrong failure. So the widget is a small native Supabase client of
-its own:
+The widget is meant to be acted on — tick something off, add something — and
+not merely read, so it needs a way to write without the engine. It gets one
+through two files in app-private storage, each owned by one side:
 
-- The app publishes a **snapshot** of the list, plus the session, into app-private
-  storage; the widget renders from it and so paints instantly with no network.
-- The widget reads and writes Supabase directly for its own actions. It needs no
-  merge logic, because `push_tasks` resolves per-field last-write-wins
-  server-side — a payoff from that decision well beyond the surface it was
-  designed for.
+- **`widget-state.json`, written by the app.** A snapshot of the list and the
+  sign-in state, republished whenever either changes. The widget renders from
+  it, so it paints instantly with no network.
+- **`widget-ops.json`, written by the widget.** A queue of what was done on it:
+  capture, complete, edit, delete. The widget overlays the queue on the
+  snapshot, so its own actions show at once.
 
-The honest limits, which are Android's rather than ours:
+The app drains the queue every time it comes to the front, then syncs. The
+drain is two-phase — claim the file, apply, confirm — so a crash mid-way
+re-delivers rather than loses, and re-delivery is harmless because the widget
+mints each capture's id itself and the engine ignores a capture whose id it has
+already seen. Replayed operations go through the ordinary engine, so they land
+in the outbox and merge per field like any other edit; the widget needs no
+merge logic of its own.
 
-- **Freshness while the app is closed.** Background refresh has a floor of about
-  fifteen minutes (`WorkManager`; `updatePeriodMillis` is worse at thirty). A task
-  captured on the desktop can take that long to reach the home screen if the phone
-  app is not running. Anything done *on* the widget is immediate, and opening the
-  app refreshes it at once. Real push would need Firebase Cloud Messaging and a
-  server to send from.
+Where Tauri puts that storage is not where Kotlin would guess — `app_local_data_dir()`
+is Android's `dataDir`, not `filesDir` — so the widget searches for the snapshot
+and writes its queue beside whichever one it found. See `RecallStorage.kt`.
+
+The honest limits:
+
+- **Widget actions reach the server when the app next opens.** The resync button
+  opens the app for exactly that reason. Syncing from the widget itself would
+  need a native Supabase client holding its own copy of the session; it is the
+  obvious next step, and deliberately not done yet.
+- **Freshness while the app is closed.** The widget re-reads the snapshot, but
+  only the app writes it, so a task captured on the desktop reaches the home
+  screen when the phone app next runs.
 - **The launcher owns the frame.** Samsung's One UI applies its own background and
   corner treatment to widgets, and lets the user override widget transparency in
   system settings. The widget requests transparency; the launcher has the last word.
