@@ -2,27 +2,106 @@
 
 /* ------------------------------------------------------------------- modal */
 
-.backdrop {
+.overlay {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
   padding: var(--rc-space-6);
-  background: var(--rc-scrim);
   z-index: 100;
-  animation: fade var(--rc-duration-base) var(--rc-ease);
+}
+
+/* A sheet sits on the bottom edge, full width, rather than floating. */
+.overlaySheet {
+  place-items: end stretch;
+  padding: 0;
+}
+
+/*
+ * Dim to focus. The scrim is its own layer so a dragged sheet can fade it in
+ * step with the finger.
+ */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--rc-scrim);
+  opacity: 0;
+  transition: opacity var(--rc-spring-duration) var(--rc-spring);
+}
+
+.overlay[data-state='open'] .scrim {
+  opacity: 1;
 }
 
 .modal {
+  position: relative;
   width: min(440px, 100%);
   max-height: min(80vh, 640px);
   display: flex;
   flex-direction: column;
   border-radius: var(--rc-radius-xl);
-  background: var(--rc-surface-raised);
-  border: var(--rc-border-width) solid var(--rc-border);
-  box-shadow: var(--rc-shadow-lg);
-  animation: rise var(--rc-duration-base) var(--rc-ease);
+  /* The card grows from its trigger: see Modal for the origin. */
+  opacity: 0;
+  transform: scale(0.92);
+  transition:
+    opacity 180ms ease-out,
+    transform var(--rc-spring-duration) var(--rc-spring);
+}
+
+.modal[data-state='open'] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Rises from the bottom edge and leaves the same way. */
+.sheet {
+  width: 100%;
+  max-height: 88vh;
+  border-radius: var(--rc-radius-xl) var(--rc-radius-xl) 0 0;
+  border-bottom: none;
+  opacity: 1;
+  transform: translateY(100%);
+  transition: transform var(--rc-spring-duration) var(--rc-spring);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.sheet[data-state='open'] {
+  transform: none;
+}
+
+/* A handle that looks like one, and a generous strip around it to grab. */
+.grabber {
+  display: grid;
+  place-items: center;
+  height: 18px;
+  cursor: grab;
+  touch-action: none;
+}
+
+.grabberBar {
+  width: 36px;
+  height: 5px;
+  border-radius: var(--rc-radius-full);
+  background: var(--rc-border-strong);
+}
+
+.sheet .modalHeader {
+  padding-top: var(--rc-space-2);
+  touch-action: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .sheet {
+    transform: none;
+    transition: opacity 160ms linear;
+  }
+  .sheet {
+    opacity: 0;
+  }
+  .sheet[data-state='open'] {
+    opacity: 1;
+  }
 }
 
 .modalHeader {
@@ -37,11 +116,13 @@
   margin: 0;
   font-size: var(--rc-text-lg);
   font-weight: var(--rc-weight-semibold);
+  letter-spacing: var(--rc-tracking-title);
 }
 
 .modalBody {
   padding: 0 var(--rc-space-6) var(--rc-space-6);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modalFooter {
@@ -65,16 +146,31 @@
   min-width: 176px;
   padding: var(--rc-space-2);
   border-radius: var(--rc-radius-lg);
-  background: var(--rc-surface-raised);
-  border: var(--rc-border-width) solid var(--rc-border);
-  box-shadow: var(--rc-shadow-lg);
   z-index: 50;
-  animation: rise var(--rc-duration-fast) var(--rc-ease);
+  /* From the corner nearest the button that opened it. */
+  transform-origin: top right;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 140ms ease-out,
+    transform var(--rc-spring-snappy-duration) var(--rc-spring-snappy);
+}
+
+.menu[data-state='open'] {
+  opacity: 1;
+  transform: none;
 }
 
 .menuLeft {
   right: auto;
   left: 0;
+  transform-origin: top left;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    transform: none;
+  }
 }
 
 .menuItem {
@@ -92,7 +188,9 @@
   cursor: pointer;
 }
 
-.menuItem:hover:not(:disabled) {
+/* Highlighted the moment it is pressed, not when the press is released. */
+.menuItem:hover:not(:disabled),
+.menuItem:active:not(:disabled) {
   background: var(--rc-surface-hover);
 }
 
@@ -120,7 +218,7 @@
 .toaster {
   position: fixed;
   left: 50%;
-  bottom: var(--rc-space-7);
+  bottom: calc(var(--rc-space-7) + env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: flex;
   flex-direction: column-reverse;
@@ -129,6 +227,7 @@
   pointer-events: none;
 }
 
+/* Rises from the bottom edge, and leaves back down it. */
 .toast {
   display: flex;
   align-items: center;
@@ -136,12 +235,36 @@
   max-width: 380px;
   padding: var(--rc-space-3) var(--rc-space-3) var(--rc-space-3) var(--rc-space-5);
   border-radius: var(--rc-radius-full);
-  background: var(--rc-surface-raised);
-  border: var(--rc-border-width) solid var(--rc-border);
-  box-shadow: var(--rc-shadow-lg);
   font-size: var(--rc-text-sm);
+  letter-spacing: var(--rc-tracking-caption);
   pointer-events: auto;
-  animation: rise var(--rc-duration-base) var(--rc-ease);
+  transition:
+    opacity 200ms ease-out,
+    transform var(--rc-spring-duration) var(--rc-spring);
+}
+
+@starting-style {
+  .toast {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+
+.toastLeaving {
+  opacity: 0;
+  transform: translateY(16px) scale(0.98);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toastLeaving {
+    transform: none;
+  }
+  @starting-style {
+    .toast {
+      transform: none;
+    }
+  }
 }
 
 .toastMessage {
@@ -164,11 +287,17 @@
   font-size: var(--rc-text-sm);
   font-weight: var(--rc-weight-medium);
   cursor: pointer;
+  transition: transform var(--rc-press);
 }
 
 .toastAction:hover {
   background: var(--rc-accent);
   color: var(--rc-accent-contrast);
+}
+
+.toastAction:active {
+  transform: scale(var(--rc-press-scale));
+  transition-duration: 0ms;
 }
 
 /* ------------------------------------------------------------------ states */
@@ -256,6 +385,7 @@
   padding: var(--rc-space-1) var(--rc-space-3);
   border-radius: var(--rc-radius-full);
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
   background: none;
   border: none;

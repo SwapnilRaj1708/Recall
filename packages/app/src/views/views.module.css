@@ -54,6 +54,7 @@
   background: var(--rc-accent-soft);
   color: var(--rc-accent);
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   font-weight: var(--rc-weight-semibold);
   font-variant-numeric: tabular-nums;
 }
@@ -168,6 +169,7 @@
   padding: var(--rc-space-2) var(--rc-space-4);
   border-top: var(--rc-border-width) solid var(--rc-border);
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
 }
 
@@ -197,6 +199,8 @@
   background: transparent;
   outline: none;
   font-size: var(--rc-text-xl);
+  letter-spacing: var(--rc-tracking-display);
+  line-height: var(--rc-leading-display);
   color: var(--rc-text);
 }
 
@@ -210,6 +214,7 @@
   gap: var(--rc-space-2);
   flex-shrink: 0;
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
 }
 

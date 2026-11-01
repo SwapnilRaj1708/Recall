@@ -22,12 +22,17 @@
   content: none;
 }
 
+/*
+ * No divider under the capture field: where tasks scroll up beneath it they
+ * fade out instead (the scroll-edge effect in tokens.css), and at rest the
+ * edge is simply clean.
+ */
 .scroller {
   flex: 1;
   min-height: 0;
   padding: var(--rc-space-2) var(--rc-space-3) var(--rc-space-4);
-  border-top: var(--rc-border-width) solid var(--rc-border);
   margin-top: var(--rc-space-2);
+  overscroll-behavior: contain;
 }
 
 .containerCompact .scroller {
@@ -60,4 +65,9 @@
   letter-spacing: 0;
   text-transform: none;
   opacity: 0.8;
+}
+
+/* The rows a dragged task passes step aside on a spring. */
+.list[data-reordering='true'] > li {
+  transition: transform var(--rc-spring-snappy-duration) var(--rc-spring-snappy);
 }

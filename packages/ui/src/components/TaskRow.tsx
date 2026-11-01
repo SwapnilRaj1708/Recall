@@ -6,8 +6,10 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
+import { haptic } from '../motion.js';
 import { splitLinks } from '../links.js';
 import { Icon } from './Icon.js';
 import { Checkbox, IconButton, Kbd, cx } from './primitives.js';
@@ -22,36 +24,28 @@ export interface TaskRowProps {
   /** Show the drag handle. Reordering is off in filtered or searched views. */
   draggable?: boolean;
   meta?: ReactNode;
-  dropIndicator?: 'before' | 'after' | null;
-  dragging?: boolean;
   /** Still only on this device: captured offline, or not yet pushed. */
   unsynced?: boolean;
 
   onToggle: (completed: boolean) => void;
   onEdit: (text: string) => void;
   onDelete: () => void;
-  onDragStart?: () => void;
-  onDragEnd?: () => void;
-  onDragOverHalf?: (half: 'before' | 'after') => void;
-  onDrop?: () => void;
+  /** The handle was pressed: the list takes it from here. See listMotion. */
+  onReorderStart?: (event: ReactPointerEvent<HTMLElement>) => void;
 }
 
 export function TaskRow({
+  id,
   text,
   completed,
   compact = false,
   draggable = false,
   meta,
-  dropIndicator = null,
-  dragging = false,
   unsynced = false,
   onToggle,
   onEdit,
   onDelete,
-  onDragStart,
-  onDragEnd,
-  onDragOverHalf,
-  onDrop,
+  onReorderStart,
 }: TaskRowProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(text);
@@ -96,49 +90,26 @@ export function TaskRow({
 
   return (
     <li
-      className={cx(
-        styles.row,
-        dragging && styles.rowDragging,
-        dropIndicator === 'before' && styles.rowDropBefore,
-        dropIndicator === 'after' && styles.rowDropAfter,
-        unsynced && styles.rowUnsynced,
-      )}
+      className={cx(styles.row, unsynced && styles.rowUnsynced)}
+      data-task-id={id}
       // Announced, not just coloured: colour alone would leave this invisible
       // to a screen reader and to anyone who cannot distinguish the tone.
       aria-describedby={unsynced ? 'rc-unsynced-hint' : undefined}
-      onDragOver={
-        onDragOverHalf
-          ? (event) => {
-              event.preventDefault();
-              const box = event.currentTarget.getBoundingClientRect();
-              onDragOverHalf(event.clientY < box.top + box.height / 2 ? 'before' : 'after');
-            }
-          : undefined
-      }
-      onDrop={
-        onDrop
-          ? (event) => {
-              event.preventDefault();
-              onDrop();
-            }
-          : undefined
-      }
     >
       {draggable ? (
-        <span
-          className={styles.handle}
-          draggable
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          aria-hidden="true"
-        >
+        <span className={styles.handle} onPointerDown={onReorderStart} aria-hidden="true">
           <Icon name="grip" size={14} />
         </span>
       ) : null}
 
       <Checkbox
         checked={completed}
-        onChange={onToggle}
+        // Completing is a commit, so it gets a tap of the motor on a phone,
+        // in the same frame as the box filling in.
+        onChange={(next) => {
+          if (next) haptic();
+          onToggle(next);
+        }}
         label={completed ? `Mark "${text}" as not done` : `Mark "${text}" as done`}
       />
 

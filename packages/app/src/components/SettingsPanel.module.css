@@ -43,6 +43,7 @@
 
 .rowHint {
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
 }
 
@@ -173,6 +174,7 @@
 .note {
   margin: 0;
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
 }
 
@@ -222,6 +224,7 @@
   background: transparent;
   color: var(--rc-text-secondary);
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
@@ -245,6 +248,7 @@
 
 .marginLabel {
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
 }
 

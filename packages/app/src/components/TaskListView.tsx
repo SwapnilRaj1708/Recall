@@ -1,7 +1,8 @@
 import type { Task } from '@recall/core';
 import { EmptyState, Icon, QuickAdd, TaskRow, cx, useToast, type QuickAddHandle } from '@recall/ui';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useTaskActions, useTasks, useUnsyncedIds } from '../context.js';
+import { useListFlip, useReorder } from './listMotion.js';
 import styles from './TaskListView.module.css';
 
 export interface TaskListViewProps {
@@ -13,11 +14,6 @@ export interface TaskListViewProps {
   /** Escape from the capture field with nothing typed — used by the widget to hide. */
   onEscape?: () => void;
   captureRef?: React.Ref<QuickAddHandle>;
-}
-
-interface DropTarget {
-  id: string;
-  half: 'before' | 'after';
 }
 
 export function TaskListView({
@@ -34,9 +30,9 @@ export function TaskListView({
   const { toast } = useToast();
   const compact = variant === 'widget';
 
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
   const internalCaptureRef = useRef<QuickAddHandle>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
 
   const query = search.trim().toLowerCase();
   const matches = useCallback(
@@ -74,20 +70,27 @@ export function TaskListView({
     [actions, toast],
   );
 
-  const handleDrop = useCallback(() => {
-    const target = dropTarget;
-    const sourceId = draggingId;
-    setDraggingId(null);
-    setDropTarget(null);
-    if (!target || !sourceId || target.id === sourceId) return;
+  const order = useMemo(() => visibleOpen.map((task) => task.id).join(' '), [visibleOpen]);
 
-    const withoutSource = visibleOpen.filter((t) => t.id !== sourceId);
-    const anchorIndex = withoutSource.findIndex((t) => t.id === target.id);
-    if (anchorIndex < 0) return;
+  // Declared before the slide animation, so on a committed reorder the drag's
+  // transforms are cleared before the slide measures where rows ended up.
+  const recordPositions = useRef<() => void>(() => {});
+  const animating = useRef(new Set<string>());
+  const startReorder = useReorder({
+    listRef,
+    scrollerRef,
+    order,
+    onBeforeCommit: () => recordPositions.current(),
+    commit: (id, index) => void actions.moveToIndex(id, index, visibleOpen),
+    animating,
+  });
+  recordPositions.current = useListFlip(listRef, order, animating);
 
-    const index = target.half === 'before' ? anchorIndex : anchorIndex + 1;
-    void actions.moveToIndex(sourceId, index, visibleOpen);
-  }, [actions, draggingId, dropTarget, visibleOpen]);
+  // The scroll-edge fade appears only while something is scrolled out of view.
+  const onScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const scroller = event.currentTarget;
+    scroller.dataset.scrolled = String(scroller.scrollTop > 0);
+  }, []);
 
   const isEmpty = visibleOpen.length === 0 && visibleCompleted.length === 0;
 
@@ -102,7 +105,7 @@ export function TaskListView({
         className={styles.capture}
       />
 
-      <div className={cx(styles.scroller, 'rc-scroll')} onDragEnd={() => setDraggingId(null)}>
+      <div ref={scrollerRef} className={cx(styles.scroller, 'rc-scroll')} onScroll={onScroll}>
         {isEmpty ? (
           query.length > 0 ? (
             <EmptyState
@@ -136,7 +139,7 @@ export function TaskListView({
         ) : null}
 
         {visibleOpen.length > 0 ? (
-          <ul className={styles.list}>
+          <ul ref={listRef} className={styles.list}>
             {visibleOpen.map((task) => (
               <TaskRow
                 key={task.id}
@@ -145,24 +148,12 @@ export function TaskListView({
                 completed={false}
                 compact={compact}
                 draggable={canReorder}
-                dragging={draggingId === task.id}
                 unsynced={unsynced.has(task.id)}
-                dropIndicator={dropTarget?.id === task.id ? dropTarget.half : null}
                 meta={compact ? undefined : relativeTime(task.createdAt)}
                 onToggle={(next) => void actions.setCompleted(task.id, next)}
                 onEdit={(text) => void actions.setText(task.id, text)}
                 onDelete={() => handleDelete(task)}
-                onDragStart={() => setDraggingId(task.id)}
-                onDragEnd={() => {
-                  setDraggingId(null);
-                  setDropTarget(null);
-                }}
-                onDragOverHalf={
-                  canReorder && draggingId
-                    ? (half) => setDropTarget({ id: task.id, half })
-                    : undefined
-                }
-                onDrop={canReorder && draggingId ? handleDrop : undefined}
+                onReorderStart={canReorder ? (event) => startReorder(task.id, event) : undefined}
               />
             ))}
           </ul>

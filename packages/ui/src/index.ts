@@ -1,5 +1,17 @@
 import './tokens.css';
 
+export {
+  SPRINGS,
+  Spring,
+  VelocityTracker,
+  haptic,
+  prefersReducedMotion,
+  project,
+  rubberband,
+  usePresence,
+} from './motion.js';
+export type { SpringConfig } from './motion.js';
+
 export { splitLinks, hrefFor } from './links.js';
 export type { TextSegment } from './links.js';
 

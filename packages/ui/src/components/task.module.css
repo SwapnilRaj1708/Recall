@@ -31,16 +31,9 @@
   background: var(--rc-surface-hover);
 }
 
-.rowDragging {
-  opacity: 0.4;
-}
-
-.rowDropBefore {
-  box-shadow: inset 0 2px 0 -0.5px var(--rc-accent);
-}
-
-.rowDropAfter {
-  box-shadow: inset 0 -2px 0 -0.5px var(--rc-accent);
+/* On touch there is no hover, so the row lights up the moment it is pressed. */
+.row:has(.editHit:active) {
+  background: var(--rc-surface-active);
 }
 
 /* The handle only appears on hover, so a resting list is just text. */
@@ -53,6 +46,8 @@
   color: var(--rc-text-tertiary);
   opacity: 0;
   cursor: grab;
+  /* The finger drives the row from here; the page must not scroll instead. */
+  touch-action: none;
   transition: opacity var(--rc-duration-fast) var(--rc-ease);
 }
 
@@ -182,6 +177,7 @@
 .meta {
   flex-shrink: 0;
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
   font-variant-numeric: tabular-nums;
 }

@@ -20,11 +20,26 @@
   /* Tunable at runtime: scales the whole interface. */
   --rc-font-scale: 1;
 
-  --rc-text-xs: calc(11px * var(--rc-font-scale));
-  --rc-text-sm: calc(12px * var(--rc-font-scale));
-  --rc-text-md: calc(13.5px * var(--rc-font-scale));
-  --rc-text-lg: calc(15px * var(--rc-font-scale));
-  --rc-text-xl: calc(19px * var(--rc-font-scale));
+  /*
+   * In rem, so the whole interface grows with the text size the person set
+   * for their system or browser, the web's Dynamic Type. At the default 16px
+   * root these are the same 11, 12, 13.5, 15 and 19px as before.
+   */
+  --rc-text-xs: calc(0.6875rem * var(--rc-font-scale));
+  --rc-text-sm: calc(0.75rem * var(--rc-font-scale));
+  --rc-text-md: calc(0.84375rem * var(--rc-font-scale));
+  --rc-text-lg: calc(0.9375rem * var(--rc-font-scale));
+  --rc-text-xl: calc(1.1875rem * var(--rc-font-scale));
+
+  /*
+   * Tracking is size-specific, never one value. Large type reads too loose
+   * and is tightened; the smallest reads too tight and is opened a little;
+   * body text is left alone.
+   */
+  --rc-tracking-display: -0.02em;
+  --rc-tracking-title: -0.01em;
+  --rc-tracking-body: 0em;
+  --rc-tracking-caption: 0.01em;
 
   --rc-weight-normal: 400;
   --rc-weight-medium: 500;
@@ -32,6 +47,8 @@
 
   --rc-leading-tight: 1.3;
   --rc-leading-normal: 1.5;
+  /* Leading runs opposite to size: large type sits tight. */
+  --rc-leading-display: 1.15;
 
   /* -------------------------------------------------------------- spacing */
   --rc-space-1: 2px;
@@ -92,6 +109,26 @@
   --rc-duration-fast: 110ms;
   --rc-duration-base: 170ms;
   --rc-ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /*
+   * Springs, for things that open, close and move. These are Apple's spring
+   * presets — damping ratio and response — sampled into CSS easing curves by
+   * the same physics the drag code runs (motion.ts), so a sheet that is
+   * dragged and a sheet that is tapped open move the same way. The duration
+   * is not chosen: it is how long that spring takes to settle.
+   *
+   * Used with transitions, never keyframe animations, because a transition
+   * turns around from wherever it is when interrupted.
+   */
+  --rc-spring: linear(0, 0.026, 0.09, 0.171, 0.262, 0.351, 0.438, 0.516, 0.587, 0.651, 0.706, 0.754, 0.794, 0.83, 0.859, 0.883, 0.904, 0.921, 0.935, 0.947, 0.956, 0.965, 0.971, 0.977, 0.981, 0.985, 0.987, 0.99, 0.992, 0.993, 0.995, 0.996, 0.996, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 1);
+  --rc-spring-duration: 550ms;
+  --rc-spring-snappy: linear(0, 0.028, 0.098, 0.183, 0.279, 0.371, 0.461, 0.539, 0.61, 0.674, 0.727, 0.775, 0.813, 0.847, 0.874, 0.896, 0.916, 0.931, 0.944, 0.955, 0.963, 0.97, 0.976, 0.981, 0.984, 0.988, 0.99, 0.992, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.999, 0.999, 0.999, 0.999, 0.999, 1);
+  --rc-spring-snappy-duration: 410ms;
+  --rc-spring-bouncy: linear(0, 0.027, 0.088, 0.176, 0.27, 0.372, 0.472, 0.561, 0.645, 0.716, 0.781, 0.835, 0.878, 0.915, 0.942, 0.965, 0.982, 0.994, 1.003, 1.008, 1.012, 1.014, 1.014, 1.014, 1.013, 1.012, 1.011, 1.009, 1.008, 1.007, 1.005, 1.004, 1.003, 1.003, 1.002, 1.001, 1.001, 1.001, 1, 1, 1);
+  --rc-spring-bouncy-duration: 450ms;
+  /* Feedback on press: instant in, quick out. */
+  --rc-press-scale: 0.96;
+  --rc-press: 100ms ease-out;
 
   /* --------------------------------------------------------------- accent */
   /* Tunable at runtime. Everything else derives from these three. */
@@ -213,6 +250,13 @@ body {
   background: var(--rc-bg);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  /*
+   * No double-tap-to-zoom wait on touch, and no grey flash on tap: every
+   * control here gives its own feedback the moment it is pressed.
+   */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button,
@@ -232,11 +276,23 @@ textarea {
   outline: none;
 }
 
-/* Respect the OS setting rather than insisting on our own motion. */
+/*
+ * Reduced motion means gentler, not none. Nothing slides, scales or springs;
+ * things that appear and disappear still cross-fade briefly, because a change
+ * with no transition at all is harder to follow. Each component drops its
+ * travel under this query and keeps its opacity change.
+ */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --rc-duration-fast: 0ms;
     --rc-duration-base: 0ms;
+    --rc-spring: linear;
+    --rc-spring-duration: 160ms;
+    --rc-spring-snappy: linear;
+    --rc-spring-snappy-duration: 160ms;
+    --rc-spring-bouncy: linear;
+    --rc-spring-bouncy-duration: 160ms;
+    --rc-press-scale: 1;
   }
 
   *,
@@ -244,7 +300,24 @@ textarea {
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Reduced transparency: every translucent surface becomes solid. */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme] {
+    --rc-surface-alpha: 1 !important;
+    --rc-backdrop-blur: 0px;
+  }
+}
+
+/* More contrast: defined borders and no faint text. */
+@media (prefers-contrast: more) {
+  :root,
+  :root[data-theme] {
+    --rc-border: var(--rc-border-strong);
+    --rc-text-tertiary: var(--rc-text-secondary);
   }
 }
 
@@ -265,6 +338,52 @@ textarea {
     -webkit-backdrop-filter: blur(var(--rc-backdrop-blur)) saturate(160%);
     backdrop-filter: blur(var(--rc-backdrop-blur)) saturate(160%);
   }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .rc-glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * A floating layer over the content: menus and sheets. Lighter than the
+ * widget's glass so it reads as something to act on, with a bright top edge
+ * where light would catch a real material. Never stacked on another one.
+ */
+.rc-material {
+  background: color-mix(in srgb, var(--rc-surface-raised) 82%, transparent);
+  border: var(--rc-border-width) solid var(--rc-border);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    var(--rc-shadow-lg);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .rc-material {
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    backdrop-filter: blur(30px) saturate(180%);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .rc-material {
+    background: var(--rc-surface-raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/*
+ * The scroll-edge effect. Where content passes under fixed chrome it fades
+ * out, instead of a hard divider line that is there whether anything is
+ * underneath or not. Only applied while there is something scrolled out of
+ * view above (data-scrolled), so a list at rest has a clean top edge.
+ */
+.rc-scroll[data-scrolled='true'] {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
 }
 
 /* Scrollbars that do not shout. */
@@ -304,4 +423,16 @@ textarea {
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
+}
+
+/*
+ * A task picked up by its handle: lifted off the list, so it reads as held.
+ * Lighter material over the rows it passes, a deeper shadow for the height.
+ */
+.rc-lifted {
+  position: relative;
+  z-index: 2;
+  background: var(--rc-surface-raised) !important;
+  box-shadow: var(--rc-shadow-md);
+  cursor: grabbing;
 }

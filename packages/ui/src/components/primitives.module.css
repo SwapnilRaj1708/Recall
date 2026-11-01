@@ -35,7 +35,19 @@
   transition:
     background-color var(--rc-duration-fast) var(--rc-ease),
     border-color var(--rc-duration-fast) var(--rc-ease),
-    opacity var(--rc-duration-fast) var(--rc-ease);
+    opacity var(--rc-duration-fast) var(--rc-ease),
+    transform var(--rc-press);
+}
+
+/*
+ * Feedback on press, not on release: :active is the pointer going down. It
+ * goes in instantly and comes back over 100ms, so a tap reads as a tap and a
+ * held press stays pressed.
+ */
+.button:active:not(:disabled),
+.iconButton:active:not(:disabled) {
+  transform: scale(var(--rc-press-scale));
+  transition-duration: 0ms;
 }
 
 .button:disabled {
@@ -53,6 +65,7 @@
   height: 38px;
   padding: 0 var(--rc-space-6);
   font-size: var(--rc-text-lg);
+  letter-spacing: var(--rc-tracking-title);
 }
 
 .primary {
@@ -101,6 +114,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transform-origin: center;
   width: var(--rc-control-height-sm);
   height: var(--rc-control-height-sm);
   padding: 0;
@@ -111,7 +125,8 @@
   cursor: pointer;
   transition:
     background-color var(--rc-duration-fast) var(--rc-ease),
-    color var(--rc-duration-fast) var(--rc-ease);
+    color var(--rc-duration-fast) var(--rc-ease),
+    transform var(--rc-press);
 }
 
 .iconButton:hover:not(:disabled) {
@@ -176,6 +191,7 @@
 .inputLarge {
   height: 40px;
   font-size: var(--rc-text-lg);
+  letter-spacing: var(--rc-tracking-title);
 }
 
 .input {
@@ -201,6 +217,7 @@
 
 .hint {
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   color: var(--rc-text-tertiary);
 }
 
@@ -226,7 +243,14 @@
   transition:
     background-color var(--rc-duration-fast) var(--rc-ease),
     border-color var(--rc-duration-fast) var(--rc-ease),
-    color var(--rc-duration-fast) var(--rc-ease);
+    color var(--rc-duration-fast) var(--rc-ease),
+    transform var(--rc-spring-bouncy-duration) var(--rc-spring-bouncy);
+}
+
+/* Pressed, it gives a little; released, it springs back. */
+.checkbox:active:not(:disabled) {
+  transform: scale(0.88);
+  transition-duration: 0ms;
 }
 
 .checkbox:hover:not(:disabled) {
@@ -258,6 +282,7 @@
   color: var(--rc-text-secondary);
   font-family: inherit;
   font-size: var(--rc-text-xs);
+  letter-spacing: var(--rc-tracking-caption);
   font-weight: var(--rc-weight-medium);
   line-height: 1;
 }
@@ -290,7 +315,18 @@
   border-radius: var(--rc-radius-full);
   background: #fff;
   box-shadow: var(--rc-shadow-sm);
-  transition: transform var(--rc-duration-fast) var(--rc-ease);
+  transition:
+    transform var(--rc-spring-snappy-duration) var(--rc-spring-snappy),
+    width var(--rc-press);
+}
+
+/* Held down, the thumb stretches toward where it is about to go, as iOS's does. */
+.switch:active:not(:disabled) .switchThumb {
+  width: 19px;
+}
+
+.switchOn:active:not(:disabled) .switchThumb {
+  transform: translateX(11px);
 }
 
 .switchOn .switchThumb {

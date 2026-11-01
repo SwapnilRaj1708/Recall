@@ -3,14 +3,43 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
+import {
+  SPRINGS,
+  Spring,
+  VelocityTracker,
+  haptic,
+  prefersReducedMotion,
+  project,
+  rubberband,
+  usePresence,
+} from '../motion.js';
 import { Icon, type IconName } from './Icon.js';
 import { Button, IconButton, cx } from './primitives.js';
 import styles from './feedback.module.css';
+
+/** Long enough for the slowest exit — the spring easing's settle time — to finish. */
+const EXIT_MS = 560;
+
+function useMediaQuery(query: string): boolean {
+  const get = () => typeof matchMedia === 'function' && matchMedia(query).matches;
+  const [matches, setMatches] = useState(get);
+  useEffect(() => {
+    if (typeof matchMedia !== 'function') return;
+    const list = matchMedia(query);
+    const update = () => setMatches(list.matches);
+    update();
+    list.addEventListener('change', update);
+    return () => list.removeEventListener('change', update);
+  }, [query]);
+  return matches;
+}
 
 /* ------------------------------------------------------------------- modal */
 
@@ -22,9 +51,38 @@ export interface ModalProps {
   footer?: ReactNode;
 }
 
+/** Narrow screens get a sheet from the bottom edge, which a thumb can reach and pull down. */
+const SHEET_QUERY = '(max-width: 560px)';
+
+/** Below this projected travel, a released sheet springs back rather than closing. */
+const DISMISS_FRACTION = 0.5;
+
+/**
+ * A modal task: dims the background and takes focus until dismissed.
+ *
+ * On a wide screen it is a card that grows out of the control that opened it
+ * and shrinks back into it — the same path in and out. On a phone it is a
+ * sheet: it rises from the bottom edge, and it can be taken hold of by its top
+ * and pulled down. The sheet tracks the finger 1:1, the dimming follows it,
+ * and on release it goes wherever the flick was heading — closed if it would
+ * have travelled past halfway, back up otherwise — continuing at the speed the
+ * finger left it. Grab it again mid-flight and it stops in your hand.
+ */
 export function Modal({ open, title, onClose, children, footer }: ModalProps) {
+  const { mounted, state } = usePresence(open, EXIT_MS);
+  const sheet = useMediaQuery(SHEET_QUERY);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrimRef = useRef<HTMLDivElement>(null);
+  const originRef = useRef<{ x: number; y: number } | null>(null);
+
   useEffect(() => {
     if (!open) return;
+    // Whatever opened this — the focused button — is where it grows from.
+    const trigger = document.activeElement;
+    if (trigger instanceof HTMLElement && trigger !== document.body) {
+      const box = trigger.getBoundingClientRect();
+      originRef.current = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -32,18 +90,35 @@ export function Modal({ open, title, onClose, children, footer }: ModalProps) {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
 
-  if (!open) return null;
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    const origin = originRef.current;
+    if (!mounted || !panel || sheet || !origin) return;
+    const box = panel.getBoundingClientRect();
+    panel.style.transformOrigin = `${origin.x - box.left}px ${origin.y - box.top}px`;
+  }, [mounted, sheet]);
+
+  const drag = useSheetDrag(panelRef, scrimRef, onClose, sheet && open);
+
+  if (!mounted) return null;
 
   return (
-    <div
-      className={styles.backdrop}
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className={styles.modal} role="dialog" aria-modal="true" aria-label={title}>
-        <header className={styles.modalHeader}>
+    <div className={cx(styles.overlay, sheet && styles.overlaySheet)} data-state={state}>
+      <div ref={scrimRef} className={styles.scrim} onClick={onClose} aria-hidden="true" />
+      <div
+        ref={panelRef}
+        className={cx(styles.modal, sheet && styles.sheet, 'rc-material')}
+        data-state={state}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        {sheet ? (
+          <div className={styles.grabber} onPointerDown={drag} aria-hidden="true">
+            <span className={styles.grabberBar} />
+          </div>
+        ) : null}
+        <header className={styles.modalHeader} onPointerDown={sheet ? drag : undefined}>
           <h2 className={styles.modalTitle}>{title}</h2>
           <IconButton icon="close" label="Close" onClick={onClose} />
         </header>
@@ -51,6 +126,108 @@ export function Modal({ open, title, onClose, children, footer }: ModalProps) {
         {footer ? <footer className={styles.modalFooter}>{footer}</footer> : null}
       </div>
     </div>
+  );
+}
+
+/**
+ * Pulling a sheet down by its top.
+ *
+ * While held, the sheet is moved directly, frame by frame, and the CSS
+ * transition is suspended so nothing lags the finger. On release a spring
+ * takes over from exactly where it is, with the finger's velocity, so there
+ * is no seam between dragging and animating.
+ */
+function useSheetDrag(
+  panelRef: React.RefObject<HTMLDivElement | null>,
+  scrimRef: React.RefObject<HTMLDivElement | null>,
+  onClose: () => void,
+  enabled: boolean,
+) {
+  const springRef = useRef<Spring | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const apply = useCallback(
+    (offset: number) => {
+      const panel = panelRef.current;
+      const scrim = scrimRef.current;
+      if (!panel) return;
+      const height = panel.offsetHeight || 1;
+      panel.style.transition = 'none';
+      panel.style.transform = `translateY(${offset}px)`;
+      if (scrim) {
+        scrim.style.transition = 'none';
+        scrim.style.opacity = String(1 - Math.min(1, Math.max(0, offset / height)));
+      }
+    },
+    [panelRef, scrimRef],
+  );
+
+  /** Hand the sheet back to its stylesheet, which by now agrees with where it is. */
+  const release = useCallback(() => {
+    for (const element of [panelRef.current, scrimRef.current]) {
+      if (!element) continue;
+      element.style.transition = '';
+      element.style.transform = '';
+      element.style.opacity = '';
+    }
+  }, [panelRef, scrimRef]);
+
+  useEffect(() => () => springRef.current?.stop(), []);
+
+  return useCallback(
+    (event: ReactPointerEvent<HTMLElement>) => {
+      const panel = panelRef.current;
+      if (!enabled || !panel || event.button !== 0) return;
+      if ((event.target as HTMLElement).closest('button')) return;
+
+      springRef.current ??= new Spring(0, apply);
+      const spring = springRef.current;
+      // Caught mid-flight: carry on from exactly where it is on screen.
+      spring.stop();
+      const startOffset = spring.value;
+      const startY = event.clientY;
+      const height = panel.offsetHeight;
+      const tracker = new VelocityTracker();
+      tracker.add(startOffset);
+      const target = event.currentTarget;
+      target.setPointerCapture(event.pointerId);
+
+      const onMove = (move: PointerEvent) => {
+        const raw = startOffset + (move.clientY - startY);
+        // Upwards there is nothing more, so it gives way less and less.
+        const offset = raw < 0 ? rubberband(raw, height) : raw;
+        tracker.add(offset);
+        spring.jump(offset);
+      };
+
+      const onUp = () => {
+        target.removeEventListener('pointermove', onMove);
+        target.removeEventListener('pointerup', onUp);
+        target.removeEventListener('pointercancel', onUp);
+        const velocity = tracker.velocity();
+        const projected = spring.value + project(velocity);
+        if (projected > height * DISMISS_FRACTION) {
+          haptic();
+          spring.to(height, SPRINGS.drawer, {
+            velocity,
+            onRest: () => {
+              onCloseRef.current();
+              // The closed style puts it exactly here, so this changes nothing on screen.
+              release();
+              spring.jump(0);
+            },
+          });
+        } else {
+          spring.to(0, SPRINGS.drawer, { velocity, onRest: release });
+        }
+      };
+
+      target.addEventListener('pointermove', onMove);
+      target.addEventListener('pointerup', onUp);
+      target.addEventListener('pointercancel', onUp);
+    },
+    [apply, enabled, panelRef, release],
   );
 }
 
@@ -71,22 +248,28 @@ export interface MenuProps {
   align?: 'left' | 'right';
 }
 
+/**
+ * Grows out of the button that opened it, from the corner nearest that
+ * button, and shrinks back into it. Opening and closing are one transition
+ * run in either direction, so a second tap mid-opening simply turns it round.
+ */
 export function Menu({ items, trigger, align = 'right' }: MenuProps) {
   const [open, setOpen] = useState(false);
+  const { mounted, state } = usePresence(open, EXIT_MS);
   const anchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
+    const onPointerDown = (event: PointerEvent) => {
       if (!anchorRef.current?.contains(event.target as Node)) setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false);
     };
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [open]);
@@ -94,8 +277,12 @@ export function Menu({ items, trigger, align = 'right' }: MenuProps) {
   return (
     <div className={styles.menuAnchor} ref={anchorRef}>
       {trigger({ onClick: () => setOpen((v) => !v), 'aria-expanded': open })}
-      {open ? (
-        <div className={cx(styles.menu, align === 'left' && styles.menuLeft)} role="menu">
+      {mounted ? (
+        <div
+          className={cx(styles.menu, align === 'left' && styles.menuLeft, 'rc-material')}
+          data-state={state}
+          role="menu"
+        >
           {items.map((item, index) => (
             <div key={item.label}>
               {item.separatorBefore && index > 0 ? (
@@ -105,7 +292,7 @@ export function Menu({ items, trigger, align = 'right' }: MenuProps) {
                 type="button"
                 role="menuitem"
                 className={cx(styles.menuItem, item.danger && styles.menuItemDanger)}
-                disabled={item.disabled}
+                disabled={item.disabled || state === 'closed'}
                 onClick={() => {
                   setOpen(false);
                   item.onSelect();
@@ -143,12 +330,20 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+/** How long a dismissed toast takes to leave, the way it came in. */
+const TOAST_EXIT_MS = 320;
+
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<(Toast & { leaving?: boolean })[]>([]);
   const nextId = useRef(1);
 
   const dismiss = useCallback((id: number) => {
-    setToasts((current) => current.filter((t) => t.id !== id));
+    // Out along the path it came in on, then gone.
+    setToasts((current) => current.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
+    setTimeout(
+      () => setToasts((current) => current.filter((t) => t.id !== id)),
+      prefersReducedMotion() ? 0 : TOAST_EXIT_MS,
+    );
   }, []);
 
   const toast = useCallback(
@@ -170,7 +365,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((item) => (
           <div
             key={item.id}
-            className={cx(styles.toast, item.tone === 'error' && styles.toastError)}
+            className={cx(
+              styles.toast,
+              'rc-material',
+              item.tone === 'error' && styles.toastError,
+              item.leaving && styles.toastLeaving,
+            )}
           >
             <span className={styles.toastMessage}>{item.message}</span>
             {item.action ? (
