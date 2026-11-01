@@ -7,10 +7,12 @@ import {
   useTaskActions,
   useTasks,
 } from '@recall/app';
+import { positionForNewCapture } from '@recall/core';
 import { ToastProvider } from '@recall/ui';
 import { StrictMode, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { config, createStorage, demo } from './runtime.js';
+import { publishSyncCredentials } from './nativeSync.js';
 import { androidOAuthLauncher } from './tauri.js';
 import {
   applyWidgetOps,
@@ -97,11 +99,15 @@ function WidgetBridge() {
     const signedIn = authState.status === 'signed-in';
     // Open tasks first: the widget is for what is still to be done, and a
     // small widget shows only the first few rows.
-    const next = buildWidgetState([...open, ...completed], signedIn, settings);
+    const all = engine.getTasks();
+    const next = buildWidgetState([...open, ...completed], signedIn, settings, {
+      top: positionForNewCapture(all, 'top'),
+      bottom: positionForNewCapture(all, 'bottom'),
+    });
     if (sameWidgetState(previous.current, next)) return;
     previous.current = next;
     void publishWidgetState(next);
-  }, [open, completed, authState, settings]);
+  }, [open, completed, authState, settings, engine]);
 
   return null;
 }
@@ -116,6 +122,7 @@ function Providers({ children }: { children: ReactNode }) {
       // Without a launcher the provider falls back to a web redirect, which
       // would navigate this webview to Google and never come back.
       oauthLauncher={androidOAuthLauncher}
+      onSyncCredentials={publishSyncCredentials}
     >
       {children}
     </RecallProvider>

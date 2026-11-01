@@ -9,6 +9,7 @@ import {
   type OAuthLauncher,
   type RecallConfig,
   type SessionStorage,
+  type SessionTokens,
   type StorageAdapter,
   type SyncStatus,
   type SyncedSettings,
@@ -55,7 +56,20 @@ export interface RecallProviderProps {
    * Must be a stable reference — pass a module-level function, not a lambda.
    */
   themeFor?: (shared: ThemeSettings) => ThemeSettings;
+  /**
+   * Called with what a native part of this host needs to call the API as the
+   * signed-in user, every time it changes, and with null on sign-out. The
+   * phone app hands this to its share receiver so a link shared from another
+   * app can reach the server without opening Recall.
+   */
+  onSyncCredentials?: (credentials: SyncCredentials | null) => void;
   children: ReactNode;
+}
+
+export interface SyncCredentials extends SessionTokens {
+  supabaseUrl: string;
+  /** The public key that identifies the project; never the service key. */
+  anonKey: string;
 }
 
 export interface RecallContextValue {
@@ -92,6 +106,7 @@ export function RecallProvider({
   oauthLauncher,
   redirectTo,
   themeFor,
+  onSyncCredentials,
   children,
 }: RecallProviderProps) {
   const configured = isConfigured(config);
@@ -126,6 +141,25 @@ export function RecallProvider({
   /* ------------------------------------------------------------- lifecycle */
 
   const previousUser = useRef<string | null>(null);
+
+  // A ref, so a host passing an inline function does not restart the services.
+  const credentialsListener = useRef(onSyncCredentials);
+  credentialsListener.current = onSyncCredentials;
+  useEffect(() => {
+    if (!services) return;
+    return services.auth.onTokens((tokens) =>
+      credentialsListener.current?.(
+        tokens
+          ? {
+              ...tokens,
+              supabaseUrl: config.supabaseUrl ?? '',
+              anonKey: config.supabaseAnonKey ?? '',
+            }
+          : null,
+      ),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [services]);
 
   useEffect(() => {
     if (!services) return;

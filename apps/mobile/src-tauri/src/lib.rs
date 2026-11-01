@@ -34,6 +34,14 @@ const WIDGET_STATE_FILE: &str = "widget-state.json";
 /// is exactly the wrong thing to show someone using this as external memory.
 #[tauri::command]
 fn publish_widget_state(app: AppHandle, payload: String) -> Result<String, String> {
+    // Returned so the Kotlin side's assumption about this location can be
+    // checked against reality rather than trusted.
+    write_atomically(&app, WIDGET_STATE_FILE, &payload)
+}
+
+/// Write a file in app-private storage by way of a temporary file and a rename,
+/// so a reader on the Kotlin side never sees it half-written.
+fn write_atomically(app: &AppHandle, name: &str, payload: &str) -> Result<String, String> {
     let dir = app
         .path()
         .app_local_data_dir()
@@ -41,8 +49,8 @@ fn publish_widget_state(app: AppHandle, payload: String) -> Result<String, Strin
 
     fs::create_dir_all(&dir).map_err(|error| format!("could not create {dir:?}: {error}"))?;
 
-    let target = dir.join(WIDGET_STATE_FILE);
-    let temporary = dir.join(format!("{WIDGET_STATE_FILE}.tmp"));
+    let target = dir.join(name);
+    let temporary = dir.join(format!("{name}.tmp"));
 
     {
         let mut file = fs::File::create(&temporary)
@@ -57,9 +65,33 @@ fn publish_widget_state(app: AppHandle, payload: String) -> Result<String, Strin
     fs::rename(&temporary, &target)
         .map_err(|error| format!("could not replace {target:?}: {error}"))?;
 
-    // Returned so the Kotlin side's assumption about this location can be
-    // checked against reality rather than trusted.
     Ok(target.to_string_lossy().into_owned())
+}
+
+/// What the share receiver needs to send a shared link straight to the server.
+///
+/// The address, the public key and the current access token — never the
+/// refresh token, which rotates and must have exactly one holder. See
+/// `nativeSync.ts` for why, and `DirectSync.kt` for the reader.
+const SYNC_CREDENTIALS_FILE: &str = "sync-credentials.json";
+
+#[tauri::command]
+fn publish_sync_credentials(app: AppHandle, payload: String) -> Result<(), String> {
+    write_atomically(&app, SYNC_CREDENTIALS_FILE, &payload).map(|_| ())
+}
+
+/// On sign-out: nothing should be able to act as a user who has left.
+#[tauri::command]
+fn clear_sync_credentials(app: AppHandle) -> Result<(), String> {
+    let dir = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|error| format!("no app data directory: {error}"))?;
+    match fs::remove_file(dir.join(SYNC_CREDENTIALS_FILE)) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(format!("could not remove credentials: {error}")),
+    }
 }
 
 /// Actions taken on the widget while the app was not running.
@@ -144,7 +176,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             publish_widget_state,
             take_widget_ops,
-            clear_widget_ops
+            clear_widget_ops,
+            publish_sync_credentials,
+            clear_sync_credentials
         ])
         .run(tauri::generate_context!())
         .expect("error while running Recall");

@@ -17,10 +17,33 @@ export interface OAuthLauncher {
   launch(authorizeUrl: string): Promise<string>;
 }
 
+/**
+ * What a native component needs to call the API as the signed-in user.
+ *
+ * Deliberately only the short-lived access token, never the refresh token:
+ * refresh tokens rotate, and a second holder refreshing on its own would
+ * invalidate this one — Supabase treats the reuse as theft and signs the
+ * user out everywhere.
+ */
+export interface SessionTokens {
+  accessToken: string;
+  /** Seconds since the epoch. */
+  expiresAt: number;
+  userId: string;
+}
+
+interface SessionLike {
+  access_token?: string;
+  expires_at?: number;
+  user?: { id: string; email?: string | null };
+}
+
 export class AuthController {
   private state: AuthState = { status: 'loading' };
   private listeners = new Set<() => void>();
   private unsubscribe: (() => void) | null = null;
+  private tokens: SessionTokens | null = null;
+  private tokenListeners = new Set<(tokens: SessionTokens | null) => void>();
 
   constructor(
     private readonly client: SupabaseClient,
@@ -39,6 +62,19 @@ export class AuthController {
     this.listeners.add(listener);
     return () => {
       this.listeners.delete(listener);
+    };
+  }
+
+  /**
+   * Follow the access token, including every silent refresh — which
+   * `subscribe` does not report, since nothing about who is signed in changed.
+   * Called at once with the current value.
+   */
+  onTokens(listener: (tokens: SessionTokens | null) => void): () => void {
+    this.tokenListeners.add(listener);
+    listener(this.tokens);
+    return () => {
+      this.tokenListeners.delete(listener);
     };
   }
 
@@ -118,7 +154,16 @@ export class AuthController {
     this.setState({ status: 'signed-out' });
   }
 
-  private applySession(session: { user?: { id: string; email?: string | null } } | null): void {
+  private applySession(session: SessionLike | null): void {
+    const tokens =
+      session?.user && session.access_token && session.expires_at
+        ? { accessToken: session.access_token, expiresAt: session.expires_at, userId: session.user.id }
+        : null;
+    if (tokens?.accessToken !== this.tokens?.accessToken) {
+      this.tokens = tokens;
+      for (const listener of this.tokenListeners) listener(tokens);
+    }
+
     if (session?.user) {
       this.setState({
         status: 'signed-in',

@@ -77,5 +77,26 @@
             android:launchMode="singleTop"
             android:exported="false" />
 
+        <!--
+          Recall in the share sheet. No window at all: it saves, toasts and
+          finishes, so the app the link came from never leaves the screen.
+          An empty task affinity keeps it out of Recall's own task, so
+          sharing never brings the app forward.
+        -->
+        <activity
+            android:name=".ShareReceiverActivity"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
     </application>
 </manifest>

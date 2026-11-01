@@ -46,11 +46,14 @@ object WidgetActions {
 
     private fun file(context: Context) = RecallStorage.opsFile(context)
 
-    fun capture(context: Context, text: String) {
+    /** Returns the id it minted, so the share receiver can send the same task on. */
+    fun capture(context: Context, text: String): String {
         // The id is generated here, exactly as the engine does for every other
         // surface, so the task has a stable identity from the moment it exists
         // and replaying this op twice cannot create two tasks.
-        append(context, Op(OP_CAPTURE, UUID.randomUUID().toString(), text, false, now()))
+        val id = UUID.randomUUID().toString()
+        append(context, Op(OP_CAPTURE, id, text, false, now()))
+        return id
     }
 
     fun setCompleted(context: Context, id: String, completed: Boolean) {

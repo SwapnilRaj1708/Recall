@@ -7,6 +7,7 @@
 -keep class com.swapnil.recall.RecallWidgetProvider { *; }
 -keep class com.swapnil.recall.RecallWidgetService { *; }
 -keep class com.swapnil.recall.WidgetActionActivity { *; }
+-keep class com.swapnil.recall.ShareReceiverActivity { *; }
 -keep class com.swapnil.recall.MainActivity { *; }
 
 # RemoteViews.setInt(id, "setPaintFlags", n) resolves that setter reflectively

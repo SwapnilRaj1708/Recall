@@ -35,6 +35,13 @@ export interface WidgetState {
    * more than it can reach the task list, so it gets them the same way.
    */
   settings: SyncedSettings;
+  /**
+   * Where a task captured outside the app should go, top or bottom, as of
+   * this snapshot. The share receiver needs a real position to send a task
+   * straight to the server; the app recomputes it properly when it replays
+   * the capture.
+   */
+  positions: { top: string; bottom: string } | null;
 }
 
 /**
@@ -48,6 +55,7 @@ export function buildWidgetState(
   tasks: Task[],
   signedIn: boolean,
   settings: SyncedSettings = DEFAULT_SETTINGS,
+  positions: WidgetState['positions'] = null,
 ): WidgetState {
   return {
     version: 1,
@@ -60,6 +68,7 @@ export function buildWidgetState(
       completedAt: task.completedAt,
     })),
     settings,
+    positions,
   };
 }
 
@@ -68,6 +77,8 @@ export function sameWidgetState(a: WidgetState | null, b: WidgetState): boolean 
   if (!a) return false;
   if (a.signedIn !== b.signedIn) return false;
   if (JSON.stringify(a.settings) !== JSON.stringify(b.settings)) return false;
+  if (a.positions?.top !== b.positions?.top) return false;
+  if (a.positions?.bottom !== b.positions?.bottom) return false;
   if (a.tasks.length !== b.tasks.length) return false;
   return a.tasks.every((task, index) => {
     const other = b.tasks[index]!;

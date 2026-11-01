@@ -8,7 +8,12 @@ export {
   useUnsyncedIds,
   useSyncedSettings,
 } from './context.js';
-export type { RecallProviderProps, RecallContextValue, TaskLists } from './context.js';
+export type {
+  RecallProviderProps,
+  RecallContextValue,
+  SyncCredentials,
+  TaskLists,
+} from './context.js';
 
 /** Development harness: the real engine against an in-memory server, no backend required. */
 export { DemoProvider } from './dev.js';

@@ -27,6 +27,11 @@ data class WidgetState(
     val present: Boolean,
     /** The account's settings, as far as the widget uses them. */
     val look: WidgetLook = WidgetLook.DEFAULT,
+    /**
+     * Positions for a new task at the top and at the bottom, as of the
+     * snapshot. The share receiver needs one to send a task to the server.
+     */
+    val positions: Pair<String, String>? = null,
 ) {
     companion object {
         val MISSING = WidgetState(signedIn = false, tasks = emptyList(), present = false)
@@ -88,6 +93,11 @@ object WidgetStateStore {
             // Absent from snapshots written before settings existed; the
             // defaults are exactly how the widget looked then.
             look = WidgetLook.parse(root.optJSONObject("settings")),
+            positions = root.optJSONObject("positions")?.let { positions ->
+                val top = positions.optString("top")
+                val bottom = positions.optString("bottom")
+                if (top.isEmpty() || bottom.isEmpty()) null else top to bottom
+            },
         )
     }
 }

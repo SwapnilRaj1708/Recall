@@ -15,4 +15,7 @@
     <string name="widget_dialog_delete">Delete</string>
     <string name="widget_dialog_open_link">Open %1$s in the browser</string>
     <string name="widget_sync_description">Sync now</string>
+    <string name="share_link_saved">Link saved</string>
+    <string name="share_saved">Saved to Recall</string>
+    <string name="share_nothing">Nothing to save</string>
 </resources>

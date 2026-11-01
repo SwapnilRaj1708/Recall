@@ -81,6 +81,6 @@ export { createRecallClient, isConfigured } from './supabase/client.js';
 export type { RecallConfig, ClientOptions, SessionStorage } from './supabase/client.js';
 export { SupabaseRemote, classify } from './supabase/remote.js';
 export { AuthController } from './supabase/auth.js';
-export type { OAuthLauncher } from './supabase/auth.js';
+export type { OAuthLauncher, SessionTokens } from './supabase/auth.js';
 export { fromRow, toRow } from './supabase/rows.js';
 export type { TaskRow } from './supabase/rows.js';
