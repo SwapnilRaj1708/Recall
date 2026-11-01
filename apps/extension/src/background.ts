@@ -19,6 +19,13 @@ import { configured, getBackgroundRuntime } from './runtime.js';
 const SYNC_ALARM = 'recall-sync';
 const SYNC_PERIOD_MINUTES = 1;
 const CONTEXT_MENU_ID = 'recall-capture-selection';
+/**
+ * The browser's equivalent of the phone's share sheet. Chrome does not let an
+ * extension join its own Share menu, but a right-click is just as close to
+ * hand: on a link, or anywhere on the page you are reading.
+ */
+const LINK_MENU_ID = 'recall-capture-link';
+const PAGE_MENU_ID = 'recall-capture-page';
 
 /* ------------------------------------------------------------------- badge */
 
@@ -107,6 +114,16 @@ chrome.runtime.onInstalled.addListener(() => {
       title: 'Add "%s" to Recall',
       contexts: ['selection'],
     });
+    chrome.contextMenus.create({
+      id: LINK_MENU_ID,
+      title: 'Add link to Recall',
+      contexts: ['link'],
+    });
+    chrome.contextMenus.create({
+      id: PAGE_MENU_ID,
+      title: 'Add this page to Recall',
+      contexts: ['page'],
+    });
   });
   void syncAndRefresh();
 });
@@ -121,10 +138,31 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId !== CONTEXT_MENU_ID) return;
-  const text = normalizeText(info.selectionText ?? '');
-  if (text.length > 0) void capture(text);
+  const text = normalizeText(
+    info.menuItemId === CONTEXT_MENU_ID
+      ? (info.selectionText ?? '')
+      : info.menuItemId === LINK_MENU_ID
+        ? (info.linkUrl ?? '')
+        : info.menuItemId === PAGE_MENU_ID
+          ? (info.pageUrl ?? '')
+          : '',
+  );
+  if (text.length === 0) return;
+  void capture(text).then((saved) => {
+    if (saved) void confirmSaved();
+  });
 });
+
+/**
+ * A moment of confirmation on the toolbar icon, since a right-click capture
+ * otherwise happens with nothing on screen to say it did. The badge goes back
+ * to the open-task count straight after.
+ */
+async function confirmSaved(): Promise<void> {
+  await chrome.action.setBadgeText({ text: '✓' });
+  await chrome.action.setBadgeBackgroundColor({ color: '#2f8f5b' });
+  setTimeout(() => void refreshBadge(), 1500);
+}
 
 /* ---------------------------------------------------------------- omnibox */
 

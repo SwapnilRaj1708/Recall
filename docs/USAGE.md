@@ -69,9 +69,24 @@ Two combinations to avoid: `Alt+Shift+R` is Chrome's own Reading Mode, and
 `Ctrl+Shift+Space` is the desktop app's global quick capture, which wins
 system-wide including inside Chrome.
 
-### Selected text on a page
+### Selected text, a link, or the page itself
 
-Select it, right-click → **Add "…" to Recall**.
+Right-click, and:
+
+- on selected text → **Add "…" to Recall**
+- on a link → **Add link to Recall**
+- anywhere on the page → **Add this page to Recall**, which saves its address
+
+The toolbar icon shows a green ✓ for a moment to say it is saved. This is the
+browser's version of sharing: Chrome does not let an extension join its own
+Share menu, but the right-click menu is as close to hand.
+
+### Sharing from another app on your phone
+
+In YouTube, Instagram, or anything with a **Share** button: Share → **Recall**.
+The link is saved, a **Link saved** toast appears, and you never leave the app
+you were in. See [On your phone](#on-your-phone) for when it reaches your
+other devices.
 
 ---
 
@@ -201,6 +216,21 @@ when the list is longer than it is.
 | Open a link | Links are underlined. Tap the task, then tap the link shown above the editor. |
 | Add | Tap anywhere on the strip down the right edge below the sync button. |
 | Sync | Tap the arrows at the top of the right edge. |
+
+### Sharing into Recall
+
+Share from any app — a video in YouTube, a reel in Instagram, a page in Chrome
+— and pick **Recall**. Nothing opens: the link is saved, **Link saved** appears
+at the bottom of the screen, and you are still in the app you shared from.
+
+The link is on your phone straight away, and on the widget. If you have used
+the Recall app in the last hour or so, it is also sent to the server there and
+then, so it reaches your desktop in seconds. Otherwise it is sent the next time
+you open Recall — the same as anything added on the widget. It is never lost
+either way.
+
+Recall shows up for anything shared as text, which is how almost every app
+shares a link. Sharing a photo or a file is not supported.
 
 ### How the widget stays in sync
 
