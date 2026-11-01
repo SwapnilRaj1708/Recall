@@ -1,5 +1,5 @@
 import { Clock, clock as defaultClock } from '../model/clock.js';
-import { compareByPosition, positionBetween, positionForNewCapture } from '../model/fracIndex.js';
+import { compareTasksInOrder, positionBetween, positionForNewCapture } from '../model/fracIndex.js';
 import { mergeAll } from '../model/merge.js';
 import {
   createTask,
@@ -246,12 +246,12 @@ export class SyncEngine {
 
   /** Everything not deleted, in list order. */
   getTasks(): Task[] {
-    return [...this.tasks.values()].filter(isActive).sort(compareByPosition);
+    return [...this.tasks.values()].filter(isActive).sort(compareTasksInOrder);
   }
 
   /** Not deleted and not completed — what the widget shows. */
   getOpenTasks(): Task[] {
-    return [...this.tasks.values()].filter(isOpen).sort(compareByPosition);
+    return [...this.tasks.values()].filter(isOpen).sort(compareTasksInOrder);
   }
 
   getCompletedTasks(): Task[] {

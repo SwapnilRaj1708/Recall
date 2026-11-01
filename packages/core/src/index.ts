@@ -8,7 +8,9 @@ export {
   positionBetween,
   positionsBetween,
   positionForNewCapture,
+  positionsForNewCaptures,
   compareByPosition,
+  compareTasksInOrder,
   isValidPosition,
 } from './model/fracIndex.js';
 export { mergeTask, mergeAll, isSameVersion, withDerivedUpdatedAt } from './model/merge.js';

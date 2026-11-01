@@ -36,12 +36,13 @@ export interface WidgetState {
    */
   settings: SyncedSettings;
   /**
-   * Where a task captured outside the app should go, top or bottom, as of
-   * this snapshot. The share receiver needs a real position to send a task
-   * straight to the server; the app recomputes it properly when it replays
-   * the capture.
+   * Positions for tasks captured outside the app, at the top and at the
+   * bottom, in the order to use them: each lands beyond the one before. The
+   * share receiver needs real positions to send tasks straight to the server,
+   * and may send several before the app next writes a snapshot — a single key
+   * shared between them would leave those tasks in no particular order.
    */
-  positions: { top: string; bottom: string } | null;
+  positions: { top: string[]; bottom: string[] } | null;
 }
 
 /**
@@ -77,8 +78,8 @@ export function sameWidgetState(a: WidgetState | null, b: WidgetState): boolean 
   if (!a) return false;
   if (a.signedIn !== b.signedIn) return false;
   if (JSON.stringify(a.settings) !== JSON.stringify(b.settings)) return false;
-  if (a.positions?.top !== b.positions?.top) return false;
-  if (a.positions?.bottom !== b.positions?.bottom) return false;
+  if (a.positions?.top[0] !== b.positions?.top[0]) return false;
+  if (a.positions?.bottom[0] !== b.positions?.bottom[0]) return false;
   if (a.tasks.length !== b.tasks.length) return false;
   return a.tasks.every((task, index) => {
     const other = b.tasks[index]!;

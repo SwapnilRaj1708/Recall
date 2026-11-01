@@ -28,10 +28,14 @@ data class WidgetState(
     /** The account's settings, as far as the widget uses them. */
     val look: WidgetLook = WidgetLook.DEFAULT,
     /**
-     * Positions for a new task at the top and at the bottom, as of the
-     * snapshot. The share receiver needs one to send a task to the server.
+     * Positions for tasks captured outside the app, at the top and at the
+     * bottom, each list in the order to use it. The share receiver needs one
+     * per task to send it to the server; see [DirectSync].
      */
-    val positions: Pair<String, String>? = null,
+    val topPositions: List<String> = emptyList(),
+    val bottomPositions: List<String> = emptyList(),
+    /** When the app wrote this snapshot; identifies which positions are spent. */
+    val publishedAt: String = "",
 ) {
     companion object {
         val MISSING = WidgetState(signedIn = false, tasks = emptyList(), present = false)
@@ -93,11 +97,15 @@ object WidgetStateStore {
             // Absent from snapshots written before settings existed; the
             // defaults are exactly how the widget looked then.
             look = WidgetLook.parse(root.optJSONObject("settings")),
-            positions = root.optJSONObject("positions")?.let { positions ->
-                val top = positions.optString("top")
-                val bottom = positions.optString("bottom")
-                if (top.isEmpty() || bottom.isEmpty()) null else top to bottom
-            },
+            topPositions = strings(root.optJSONObject("positions")?.optJSONArray("top")),
+            bottomPositions = strings(root.optJSONObject("positions")?.optJSONArray("bottom")),
+            publishedAt = root.optString("publishedAt"),
         )
+    }
+
+    private fun strings(array: org.json.JSONArray?): List<String> = buildList {
+        for (index in 0 until (array?.length() ?: 0)) {
+            array!!.optString(index).takeIf { it.isNotEmpty() }?.let(::add)
+        }
     }
 }

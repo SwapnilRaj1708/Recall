@@ -27,6 +27,8 @@ import java.net.URL
 object DirectSync {
     private const val TAG = "RecallShare"
     private const val CREDENTIALS_FILE = "sync-credentials.json"
+    /** Which of the snapshot's positions shares have already taken. */
+    private const val USED_FILE = "share-positions.json"
     /** Leave this much of the token's life unused, for clock skew and the request itself. */
     private const val EXPIRY_MARGIN_SECONDS = 60L
     private const val TIMEOUT_MS = 10_000
@@ -45,9 +47,10 @@ object DirectSync {
             return
         }
 
-        val state = WidgetStateStore.read(context)
-        val positions = state.positions ?: return
-        val position = if (state.look.addToBottom) positions.second else positions.first
+        val position = nextPosition(context) ?: run {
+            Log.i(TAG, "no unused position left; the app will send this when it opens")
+            return
+        }
 
         // Off the main thread; the activity that called this has already gone.
         Thread {
@@ -58,6 +61,37 @@ object DirectSync {
                 Log.w(TAG, "could not send shared capture; it stays queued", error)
             }
         }.start()
+    }
+
+    /**
+     * The next position from the app's snapshot that no earlier share took.
+     *
+     * The app leaves a run of positions, each beyond the last, because several
+     * links can be shared before it next runs. Taking the same one twice is
+     * exactly what put two shared links in no particular order, so the count
+     * of positions used is kept per snapshot and starts again with each new one.
+     */
+    @Synchronized
+    private fun nextPosition(context: Context): String? {
+        val state = WidgetStateStore.read(context)
+        val positions = if (state.look.addToBottom) state.bottomPositions else state.topPositions
+        val ledger = File(RecallStorage.writeDir(context), USED_FILE)
+        val used = try {
+            val json = JSONObject(ledger.readText())
+            if (json.optString("snapshot") == state.publishedAt) json.optInt("used", 0) else 0
+        } catch (_: Exception) {
+            0
+        }
+        val position = positions.getOrNull(used) ?: return null
+        try {
+            ledger.writeText(JSONObject().put("snapshot", state.publishedAt).put("used", used + 1).toString())
+        } catch (error: Exception) {
+            // Without a record this position could be handed out again, so
+            // rather than risk a tie, leave the link for the app to send.
+            Log.w(TAG, "could not record a used position", error)
+            return null
+        }
+        return position
     }
 
     private fun read(context: Context): Credentials? {

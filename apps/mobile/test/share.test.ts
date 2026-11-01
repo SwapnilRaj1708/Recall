@@ -75,14 +75,23 @@ describe('sending a shared task straight to the server', () => {
 });
 
 describe('positions in the widget snapshot', () => {
-  it('carries where a captured task would go', () => {
-    const state = buildWidgetState([], true, undefined, { top: 'Zz', bottom: 'a1' });
-    expect(state.positions).toEqual({ top: 'Zz', bottom: 'a1' });
+  it('carries a run of positions, so shares in a row do not tie', () => {
+    const state = buildWidgetState([], true, undefined, { top: ['Zz', 'Zy'], bottom: ['a1', 'a2'] });
+    expect(state.positions).toEqual({ top: ['Zz', 'Zy'], bottom: ['a1', 'a2'] });
   });
 
   it('writes a new snapshot when they change', () => {
-    const before = buildWidgetState([], true, undefined, { top: 'Zz', bottom: 'a1' });
-    const after = buildWidgetState([], true, undefined, { top: 'Zy', bottom: 'a1' });
+    const before = buildWidgetState([], true, undefined, { top: ['Zz'], bottom: ['a1'] });
+    const after = buildWidgetState([], true, undefined, { top: ['Zy'], bottom: ['a1'] });
     expect(sameWidgetState(before, after)).toBe(false);
+  });
+
+  it('is read by a receiver that never hands out the same position twice', () => {
+    // The fix for two shared links landing in no particular order: each share
+    // takes the next unused position, counted per snapshot.
+    const sync = kotlin('DirectSync.kt');
+    expect(sync).toContain('positions.getOrNull(used)');
+    expect(sync).toContain('.put("used", used + 1)');
+    expect(sync).toContain('state.publishedAt');
   });
 });

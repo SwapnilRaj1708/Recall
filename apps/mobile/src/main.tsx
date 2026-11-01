@@ -7,7 +7,7 @@ import {
   useTaskActions,
   useTasks,
 } from '@recall/app';
-import { positionForNewCapture } from '@recall/core';
+import { positionsForNewCaptures } from '@recall/core';
 import { ToastProvider } from '@recall/ui';
 import { StrictMode, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -23,6 +23,13 @@ import {
   takeWidgetOps,
   type WidgetState,
 } from './widget.js';
+
+/**
+ * How many shares the receiver can send straight to the server before the app
+ * next writes a snapshot. Beyond this, a shared link still saves; it just
+ * waits for the app to open before reaching the server.
+ */
+const SHARE_POSITIONS = 20;
 
 /**
  * Keeps the home-screen widget's snapshot in step with the list.
@@ -101,8 +108,8 @@ function WidgetBridge() {
     // small widget shows only the first few rows.
     const all = engine.getTasks();
     const next = buildWidgetState([...open, ...completed], signedIn, settings, {
-      top: positionForNewCapture(all, 'top'),
-      bottom: positionForNewCapture(all, 'bottom'),
+      top: positionsForNewCaptures(all, 'top', SHARE_POSITIONS),
+      bottom: positionsForNewCaptures(all, 'bottom', SHARE_POSITIONS),
     });
     if (sameWidgetState(previous.current, next)) return;
     previous.current = next;

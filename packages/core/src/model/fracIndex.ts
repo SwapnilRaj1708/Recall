@@ -78,6 +78,26 @@ export function positionForNewCapture(
   existing: readonly { position: string }[],
   placement: 'top' | 'bottom' = 'top',
 ): string {
+  return positionsForNewCaptures(existing, placement, 1)[0]!;
+}
+
+/**
+ * Positions for several captures made in a row, in the order to use them.
+ *
+ * Each one lands beyond the last — above it at the top, below it at the
+ * bottom — so a run of captures keeps the order it was made in. This is for a
+ * capturer that cannot see the list as it changes: the phone's share receiver
+ * sends links straight to the server from a snapshot the app left it, and
+ * handing every share the same "top" key from that snapshot gave them all the
+ * same position, in no particular order.
+ *
+ * The first key is exactly what `positionForNewCapture` returns.
+ */
+export function positionsForNewCaptures(
+  existing: readonly { position: string }[],
+  placement: 'top' | 'bottom',
+  count: number,
+): string[] {
   let smallest: string | null = null;
   let largest: string | null = null;
   for (const t of existing) {
@@ -87,7 +107,29 @@ export function positionForNewCapture(
     if (smallest === null || t.position < smallest) smallest = t.position;
     if (largest === null || t.position > largest) largest = t.position;
   }
-  return placement === 'bottom' ? positionAfter(largest) : positionBefore(smallest);
+  if (placement === 'bottom') return generateNKeysBetween(anchor(largest), null, count);
+  // Generated in ascending order; the one nearest the current top is used first.
+  return generateNKeysBetween(null, anchor(smallest), count).reverse();
+}
+
+/**
+ * List order: by position, and among equal positions the newest first.
+ *
+ * Positions should be unique, but two can match — two devices capturing at
+ * the top while both offline compute the same key from the same list — and
+ * without a rule for ties those tasks would sit in whatever order a sort
+ * happened to leave them, possibly different on each device. Newest first
+ * matches where a capture normally lands, and the id makes it total.
+ */
+export function compareTasksInOrder(
+  a: { position: string; createdAt: string; id: string },
+  b: { position: string; createdAt: string; id: string },
+): number {
+  return (
+    compareByPosition(a, b) ||
+    (a.createdAt > b.createdAt ? -1 : a.createdAt < b.createdAt ? 1 : 0) ||
+    (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  );
 }
 
 export function compareByPosition(a: { position: string }, b: { position: string }): number {
