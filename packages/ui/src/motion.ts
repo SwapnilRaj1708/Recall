@@ -233,31 +233,28 @@ export function haptic(kind: 'light' | 'medium' = 'light'): void {
  * so reopening something halfway through closing turns it around smoothly
  * instead of finishing the exit first. That is the interruptibility rule,
  * applied to things that are opened and closed rather than dragged.
+ *
+ * Opening is "open" from the very first render, and the entrance comes from
+ * an `@starting-style` rule in the stylesheet. An earlier version mounted in
+ * the closed style and waited two animation frames to switch, and on the
+ * phone those frames did not come in time: Settings opened invisibly, below
+ * the screen, and stayed there. Nothing here waits for a frame now, so a
+ * thing that is open is always on screen, animated or not.
  */
 export function usePresence(
   open: boolean,
   exitMs: number,
 ): { mounted: boolean; state: 'open' | 'closed' } {
-  const [mounted, setMounted] = useState(open);
-  const [shown, setShown] = useState(open);
+  const [lingering, setLingering] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setMounted(true);
-      // Two frames: one to mount in the closed style, one to transition out of it.
-      let second = 0;
-      const first = requestAnimationFrame(() => {
-        second = requestAnimationFrame(() => setShown(true));
-      });
-      return () => {
-        cancelAnimationFrame(first);
-        cancelAnimationFrame(second);
-      };
+      setLingering(true);
+      return;
     }
-    setShown(false);
-    const timer = setTimeout(() => setMounted(false), prefersReducedMotion() ? 0 : exitMs);
+    const timer = setTimeout(() => setLingering(false), prefersReducedMotion() ? 0 : exitMs);
     return () => clearTimeout(timer);
   }, [open, exitMs]);
 
-  return { mounted, state: shown ? 'open' : 'closed' };
+  return { mounted: open || lingering, state: open ? 'open' : 'closed' };
 }

@@ -69,6 +69,25 @@
   transform: none;
 }
 
+/*
+ * Where each one enters from. Applied by the browser to the first style of a
+ * newly rendered element, so the entrance needs no script and no frame to
+ * have been drawn first; leaving is the ordinary transition to `closed`.
+ */
+@starting-style {
+  .overlay[data-state='open'] .scrim {
+    opacity: 0;
+  }
+  .modal[data-state='open'] {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  .sheet[data-state='open'] {
+    opacity: 1;
+    transform: translateY(100%);
+  }
+}
+
 /* A handle that looks like one, and a generous strip around it to grab. */
 .grabber {
   display: grid;
@@ -101,6 +120,13 @@
   }
   .sheet[data-state='open'] {
     opacity: 1;
+  }
+  @starting-style {
+    .modal[data-state='open'],
+    .sheet[data-state='open'] {
+      opacity: 0;
+      transform: none;
+    }
   }
 }
 
@@ -159,6 +185,13 @@
 .menu[data-state='open'] {
   opacity: 1;
   transform: none;
+}
+
+@starting-style {
+  .menu[data-state='open'] {
+    opacity: 0;
+    transform: scale(0.9);
+  }
 }
 
 .menuLeft {
