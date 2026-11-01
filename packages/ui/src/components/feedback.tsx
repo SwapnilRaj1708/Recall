@@ -27,7 +27,7 @@ import styles from './feedback.module.css';
 /** Long enough for the slowest exit — the spring easing's settle time — to finish. */
 const EXIT_MS = 560;
 
-function useMediaQuery(query: string): boolean {
+export function useMediaQuery(query: string): boolean {
   const get = () => typeof matchMedia === 'function' && matchMedia(query).matches;
   const [matches, setMatches] = useState(get);
   useEffect(() => {

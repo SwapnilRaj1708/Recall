@@ -51,6 +51,7 @@ export {
   ErrorState,
   SkeletonList,
   SyncBadge,
+  useMediaQuery,
 } from './components/feedback.js';
 export type {
   ModalProps,

@@ -61,6 +61,12 @@
 
 .search {
   flex: 1;
+  /*
+   * Without this the field cannot shrink below the width an input asks for,
+   * and on a phone that pushed the settings button off the right edge of the
+   * screen, out of reach.
+   */
+  min-width: 0;
   max-width: 300px;
 }
 

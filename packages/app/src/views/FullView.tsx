@@ -1,5 +1,5 @@
 import type { QuickAddHandle } from '@recall/ui';
-import { Button, IconButton, Modal, SyncBadge, TextInput } from '@recall/ui';
+import { Button, IconButton, Modal, SyncBadge, TextInput, useMediaQuery } from '@recall/ui';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { AuthGate } from '../components/AuthGate.js';
 import { SettingsPanel } from '../components/SettingsPanel.js';
@@ -29,6 +29,8 @@ export function FullView({ headerExtra, platformSettings, title = 'Recall' }: Fu
 
   const [search, setSearch] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // On a phone the header has room for the sync dot, not its label.
+  const narrow = useMediaQuery('(max-width: 480px)');
   const [signOutWarning, setSignOutWarning] = useState<number | null>(null);
   const captureRef = useRef<QuickAddHandle>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -80,7 +82,7 @@ export function FullView({ headerExtra, platformSettings, title = 'Recall' }: Fu
               "Connecting" forever and describe work that is not happening.
             */}
             {authState.status === 'signed-in' ? (
-              <SyncBadge {...status} onClick={() => void actions.syncNow()} />
+              <SyncBadge {...status} compact={narrow} onClick={() => void actions.syncNow()} />
             ) : null}
             {headerExtra}
             <IconButton icon="settings" label="Settings" onClick={() => setSettingsOpen(true)} />
