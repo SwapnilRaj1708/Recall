@@ -910,3 +910,71 @@ describe('sharing one store with other contexts', () => {
     expect(worker.remote.pushCount).toBe(0);
   });
 });
+
+describe('the Saved folder', () => {
+  it('moves a task out of the list and into Saved', async () => {
+    const { engine } = makeClient(server);
+    await engine.start();
+    const task = await engine.capture('a recipe worth keeping');
+    await engine.capture('buy milk');
+
+    await engine.save(task!.id);
+
+    expect(textsOf(engine.getOpenTasks())).toEqual(['buy milk']);
+    expect(textsOf(engine.getSavedTasks())).toEqual(['a recipe worth keeping']);
+  });
+
+  it('saves a rewritten version with Save As', async () => {
+    const { engine } = makeClient(server);
+    await engine.start();
+    const task = await engine.capture('recipe');
+
+    await engine.save(task!.id, 'Recipe: dal makhani https://example.com/dal');
+
+    expect(textsOf(engine.getSavedTasks())).toEqual(['Recipe: dal makhani https://example.com/dal']);
+    expect(engine.getOpenTasks()).toHaveLength(0);
+  });
+
+  it('keeps a saved task out of the done list too', async () => {
+    const { engine } = makeClient(server);
+    await engine.start();
+    const task = await engine.capture('done and kept');
+    await engine.setCompleted(task!.id, true);
+    await engine.save(task!.id);
+    expect(engine.getCompletedTasks()).toHaveLength(0);
+    expect(textsOf(engine.getSavedTasks())).toEqual(['done and kept']);
+  });
+
+  it('can move a task back to the list', async () => {
+    const { engine } = makeClient(server);
+    await engine.start();
+    const task = await engine.capture('back again');
+    await engine.save(task!.id);
+    await engine.unsave(task!.id);
+    expect(textsOf(engine.getOpenTasks())).toEqual(['back again']);
+    expect(engine.getSavedTasks()).toHaveLength(0);
+  });
+
+  it('reaches other devices, and survives a concurrent edit on one of them', async () => {
+    const phone = makeClient(server, { clockOffsetMs: 0 });
+    const desktop = makeClient(server, { clockOffsetMs: 5 });
+    await phone.engine.start();
+    await desktop.engine.start();
+    const task = await phone.engine.capture('shared');
+    await phone.engine.syncNow();
+    await desktop.engine.syncNow();
+
+    phone.remote.goOffline();
+    await phone.engine.save(task!.id);
+    await desktop.engine.setText(task!.id, 'shared, edited');
+    await desktop.engine.syncNow();
+    phone.remote.goOnline();
+    await phone.engine.syncNow();
+    await desktop.engine.syncNow();
+
+    for (const { engine } of [phone, desktop]) {
+      expect(textsOf(engine.getSavedTasks())).toEqual(['shared, edited']);
+      expect(engine.getOpenTasks()).toHaveLength(0);
+    }
+  });
+});

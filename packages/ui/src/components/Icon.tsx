@@ -24,6 +24,9 @@ export type IconName =
   | 'grip'
   | 'alert'
   | 'inbox'
+  | 'bookmark'
+  | 'saved'
+  | 'back'
   | 'google';
 
 const PATHS: Record<Exclude<IconName, 'google'>, string> = {
@@ -47,6 +50,11 @@ const PATHS: Record<Exclude<IconName, 'google'>, string> = {
   alert: 'M8 5.5v3.2M8 11.2h.01M7 2.9L1.9 12a1.1 1.1 0 001 1.7h10.2a1.1 1.1 0 001-1.7L9 2.9a1.1 1.1 0 00-2 0z',
   inbox:
     'M2.5 9.5h3l1 2h3l1-2h3M3.6 3.5h8.8l1.1 6v3a1 1 0 01-1 1H3.5a1 1 0 01-1-1v-3z',
+  // Save: a ribbon marker, the same symbol every platform uses for "keep this".
+  bookmark: 'M4.5 2.8h7v10.4L8 10.7l-3.5 2.5z',
+  // The Saved folder: a folder with the ribbon on it.
+  saved: 'M2.2 4.4a1 1 0 011-1h3l1.3 1.4h5.3a1 1 0 011 1v6.4a1 1 0 01-1 1H3.2a1 1 0 01-1-1zM8.6 6.6h2.6v4.2L9.9 9.9l-1.3.9z',
+  back: 'M9.8 3.5L5.3 8l4.5 4.5',
 };
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {

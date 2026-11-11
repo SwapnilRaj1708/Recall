@@ -71,3 +71,33 @@
 .list[data-reordering='true'] > li {
   transition: transform var(--rc-spring-snappy-duration) var(--rc-spring-snappy);
 }
+
+/* The Saved folder button, at the right end of the capture field. */
+.savedButton {
+  flex-shrink: 0;
+}
+
+.savedHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--rc-space-3);
+  min-height: var(--rc-row-height);
+  padding: 0 var(--rc-space-3) 0 var(--rc-space-2);
+}
+
+.savedTitle {
+  font-size: var(--rc-text-md);
+  font-weight: var(--rc-weight-semibold);
+  letter-spacing: var(--rc-tracking-title);
+}
+
+.savedSpacer {
+  flex: 1;
+}
+
+/* Rows lift on a held press, so they must not start a text selection or a callout. */
+.list > li {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}

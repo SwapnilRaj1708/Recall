@@ -372,6 +372,8 @@ function useEngineVersion(): number {
 export interface TaskLists {
   open: Task[];
   completed: Task[];
+  /** The Saved folder, most recently saved first. */
+  saved: Task[];
   deleted: Task[];
   all: Task[];
 }
@@ -383,6 +385,7 @@ export function useTasks(): TaskLists {
     () => ({
       open: engine.getOpenTasks(),
       completed: engine.getCompletedTasks(),
+      saved: engine.getSavedTasks(),
       deleted: engine.getDeletedTasks(),
       all: engine.getTasks(),
     }),
@@ -443,6 +446,8 @@ export function useTaskActions() {
       setText: (id: string, text: string) => engine.setText(id, text),
       setCompleted: (id: string, completed: boolean) => engine.setCompleted(id, completed),
       remove: (id: string) => engine.remove(id),
+      save: (id: string, text?: string) => engine.save(id, text),
+      unsave: (id: string) => engine.unsave(id),
       restore: (id: string) => engine.restore(id),
       moveToIndex: (id: string, index: number, visible?: Task[]) =>
         engine.moveToIndex(id, index, visible),

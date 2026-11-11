@@ -5,6 +5,7 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
+import type { ReactNode } from 'react';
 import { Icon } from './Icon.js';
 import { Kbd, cx } from './primitives.js';
 import styles from './task.module.css';
@@ -22,6 +23,8 @@ export interface QuickAddProps {
   onEscape?: () => void;
   showHint?: boolean;
   className?: string;
+  /** Something that sits at the right end of the field, such as the Saved folder. */
+  trailing?: ReactNode;
 }
 
 /**
@@ -34,7 +37,15 @@ export interface QuickAddProps {
  * and the sync engine deals with delivery.
  */
 export const QuickAdd = forwardRef<QuickAddHandle, QuickAddProps>(function QuickAdd(
-  { onSubmit, placeholder = 'What do you need to remember?', autoFocus, onEscape, showHint = true, className },
+  {
+    onSubmit,
+    placeholder = 'What do you need to remember?',
+    autoFocus,
+    onEscape,
+    showHint = true,
+    className,
+    trailing,
+  },
   ref,
 ) {
   const [value, setValue] = useState('');
@@ -92,6 +103,7 @@ export const QuickAdd = forwardRef<QuickAddHandle, QuickAddProps>(function Quick
           <Kbd>Enter</Kbd>
         </span>
       ) : null}
+      {trailing}
     </div>
   );
 });

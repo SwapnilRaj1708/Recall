@@ -24,6 +24,7 @@ export function mergeTask(local: Task | undefined, incoming: Task): Task {
   const completedWins = isNewer(incoming.completedUpdatedAt, local.completedUpdatedAt);
   const positionWins = isNewer(incoming.positionUpdatedAt, local.positionUpdatedAt);
   const deletedWins = isNewer(incoming.deletedUpdatedAt, local.deletedUpdatedAt);
+  const savedWins = isNewer(incoming.savedUpdatedAt, local.savedUpdatedAt);
 
   return withDerivedUpdatedAt({
     id: local.id,
@@ -44,6 +45,9 @@ export function mergeTask(local: Task | undefined, incoming: Task): Task {
     deletedAt: deletedWins ? incoming.deletedAt : local.deletedAt,
     deletedUpdatedAt: deletedWins ? incoming.deletedUpdatedAt : local.deletedUpdatedAt,
 
+    savedAt: savedWins ? incoming.savedAt : local.savedAt,
+    savedUpdatedAt: savedWins ? incoming.savedUpdatedAt : local.savedUpdatedAt,
+
     // Creation is immutable, so the earliest claim is the honest one. Taking the
     // minimum keeps this stable no matter which replica is seen first.
     createdAt: local.createdAt < incoming.createdAt ? local.createdAt : incoming.createdAt,
@@ -59,6 +63,7 @@ export function withDerivedUpdatedAt(task: Task): Task {
     task.completedUpdatedAt,
     task.positionUpdatedAt,
     task.deletedUpdatedAt,
+    task.savedUpdatedAt,
   );
   return updatedAt === task.updatedAt ? task : { ...task, updatedAt };
 }
@@ -72,6 +77,8 @@ export function isSameVersion(a: Task, b: Task): boolean {
     a.completedAt === b.completedAt &&
     a.position === b.position &&
     a.deletedAt === b.deletedAt &&
+    a.savedAt === b.savedAt &&
+    a.savedUpdatedAt === b.savedUpdatedAt &&
     a.textUpdatedAt === b.textUpdatedAt &&
     a.completedUpdatedAt === b.completedUpdatedAt &&
     a.positionUpdatedAt === b.positionUpdatedAt &&

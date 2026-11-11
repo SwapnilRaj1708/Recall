@@ -31,6 +31,34 @@
   background: var(--rc-surface-hover);
 }
 
+/* The save button, in the space the drag handle used to take. */
+.leading {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: calc(var(--rc-space-3) * -1);
+}
+
+.saveButton {
+  color: var(--rc-text-tertiary);
+}
+
+.saveButton[aria-expanded='true'] {
+  color: var(--rc-accent);
+  background: var(--rc-accent-soft);
+}
+
+/* Save As: the field says what Enter will do. */
+.editInputSaving {
+  border-color: var(--rc-accent);
+  box-shadow: 0 0 0 3px var(--rc-accent-soft);
+}
+
+.savingHint {
+  font-size: var(--rc-text-xs);
+  color: var(--rc-accent);
+}
+
 /* On touch there is no hover, so the row lights up the moment it is pressed. */
 .row:has(.editHit:active) {
   background: var(--rc-surface-active);

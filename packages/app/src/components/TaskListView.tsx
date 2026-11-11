@@ -1,6 +1,16 @@
 import type { Task } from '@recall/core';
-import { EmptyState, Icon, QuickAdd, TaskRow, cx, useToast, type QuickAddHandle } from '@recall/ui';
-import { useCallback, useMemo, useRef } from 'react';
+import {
+  EmptyState,
+  Icon,
+  IconButton,
+  QuickAdd,
+  TaskRow,
+  cx,
+  haptic,
+  useToast,
+  type QuickAddHandle,
+} from '@recall/ui';
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useTaskActions, useTasks, useUnsyncedIds } from '../context.js';
 import { useListFlip, useReorder } from './listMotion.js';
 import styles from './TaskListView.module.css';
@@ -24,13 +34,15 @@ export function TaskListView({
   onEscape,
   captureRef,
 }: TaskListViewProps) {
-  const { open, completed } = useTasks();
+  const { open, completed, saved } = useTasks();
   const actions = useTaskActions();
   const unsynced = useUnsyncedIds();
   const { toast } = useToast();
   const compact = variant === 'widget';
 
   const internalCaptureRef = useRef<QuickAddHandle>(null);
+  /** The working list, or the Saved folder opened from the button beside the field. */
+  const [view, setView] = useState<'list' | 'saved'>('list');
   const listRef = useRef<HTMLUListElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +56,18 @@ export function TaskListView({
   const visibleCompleted = useMemo(
     () => (showCompleted ? completed.filter(matches) : []),
     [completed, showCompleted, matches],
+  );
+  const visibleSaved = useMemo(() => saved.filter(matches), [saved, matches]);
+
+  const handleSave = useCallback(
+    (task: Task, text?: string) => {
+      void actions.save(task.id, text);
+      toast({
+        message: 'Saved',
+        action: { label: 'Undo', onSelect: () => void actions.unsave(task.id) },
+      });
+    },
+    [actions, toast],
   );
 
   // A drag reorders the canonical list, so it only makes sense when the whole
@@ -92,6 +116,139 @@ export function TaskListView({
     scroller.dataset.scrolled = String(scroller.scrollTop > 0);
   }, []);
 
+  /*
+   * Hold anywhere on a row to drag it — the handle is gone, its space now
+   * holds the save button. A press becomes a drag only after it has been held
+   * still for a moment, so a tap still edits, a press on a button or link is
+   * left alone, and a finger that starts moving is scrolling, not dragging.
+   */
+  const pressRef = useRef<{ cancel: () => void } | null>(null);
+  const swallowClick = useRef(false);
+  const onPressStart = useCallback(
+    (id: string, event: ReactPointerEvent<HTMLElement>) => {
+      if (!canReorder || event.button !== 0) return;
+      const target = event.target as HTMLElement;
+      // The task's own text (its edit layer) and empty row space lift it;
+      // the checkbox, buttons, links and menus keep their own presses.
+      if (target.closest('a, input, [role="menu"], button:not([class*="editHit"])')) return;
+      const row = event.currentTarget;
+      const pointerId = event.pointerId;
+      const startX = event.clientX;
+      const startY = event.clientY;
+      let lastY = startY;
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', cleanup);
+        window.removeEventListener('pointercancel', cleanup);
+        pressRef.current = null;
+      };
+      const onMove = (move: PointerEvent) => {
+        lastY = move.clientY;
+        if (Math.hypot(move.clientX - startX, move.clientY - startY) > 8) cleanup();
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        haptic('medium');
+        // The release after a drag would otherwise reach the row as a click
+        // and open the editor.
+        swallowClick.current = true;
+        startReorder(id, {
+          button: 0,
+          clientY: lastY,
+          pointerId,
+          currentTarget: row,
+          preventDefault: () => {},
+        } as unknown as ReactPointerEvent<HTMLElement>);
+      }, HOLD_MS);
+
+      pressRef.current?.cancel();
+      pressRef.current = { cancel: cleanup };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', cleanup);
+      window.addEventListener('pointercancel', cleanup);
+    },
+    [canReorder, startReorder],
+  );
+
+  // While a row is held for dragging, the page must not scroll under the
+  // finger, and the release must not count as a tap.
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const onTouchMove = (event: TouchEvent) => {
+      if (list.dataset.reordering === 'true') event.preventDefault();
+    };
+    const onClick = (event: MouseEvent) => {
+      if (!swallowClick.current) return;
+      swallowClick.current = false;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    list.addEventListener('touchmove', onTouchMove, { passive: false });
+    list.addEventListener('click', onClick, true);
+    return () => {
+      list.removeEventListener('touchmove', onTouchMove);
+      list.removeEventListener('click', onClick, true);
+    };
+  });
+
+  const savedButton = (
+    <IconButton
+      icon="saved"
+      label={view === 'saved' ? 'Back to the list' : `Saved (${saved.length})`}
+      title={view === 'saved' ? 'Back to the list' : `Saved — ${saved.length}`}
+      className={cx(styles.savedButton, view === 'saved' && 'rc-toggle-on')}
+      onClick={() => setView((current) => (current === 'saved' ? 'list' : 'saved'))}
+    />
+  );
+
+  if (view === 'saved') {
+    return (
+      <div className={cx(styles.container, compact && styles.containerCompact)}>
+        <div className={cx(styles.capture, styles.savedHeader)}>
+          <IconButton icon="back" label="Back to the list" onClick={() => setView('list')} />
+          <span className={styles.savedTitle}>Saved</span>
+          <span className={styles.sectionCount}>{saved.length}</span>
+          <span className={styles.savedSpacer} />
+          {savedButton}
+        </div>
+        <div className={cx(styles.scroller, 'rc-scroll')} onScroll={onScroll}>
+          {visibleSaved.length === 0 ? (
+            <EmptyState
+              icon="saved"
+              title={query.length > 0 ? 'No matches' : 'Nothing saved yet'}
+              body={
+                query.length > 0
+                  ? `Nothing saved contains "${search.trim()}".`
+                  : 'Tap the bookmark beside a task to keep it here.'
+              }
+              compact={compact}
+            />
+          ) : (
+            <ul className={styles.list}>
+              {visibleSaved.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  id={task.id}
+                  text={task.text}
+                  completed={false}
+                  compact={compact}
+                  meta={compact ? undefined : relativeTime(task.savedAt ?? task.updatedAt)}
+                  onToggle={() => {}}
+                  onEdit={(text) => void actions.setText(task.id, text)}
+                  onDelete={() => handleDelete(task)}
+                  onUnsave={() => void actions.unsave(task.id)}
+                />
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   const isEmpty = visibleOpen.length === 0 && visibleCompleted.length === 0;
 
   return (
@@ -103,6 +260,7 @@ export function TaskListView({
         onEscape={onEscape}
         placeholder={compact ? 'Add a task…' : 'What do you need to remember?'}
         className={styles.capture}
+        trailing={savedButton}
       />
 
       <div ref={scrollerRef} className={cx(styles.scroller, 'rc-scroll')} onScroll={onScroll}>
@@ -147,13 +305,14 @@ export function TaskListView({
                 text={task.text}
                 completed={false}
                 compact={compact}
-                draggable={canReorder}
                 unsynced={unsynced.has(task.id)}
                 meta={compact ? undefined : relativeTime(task.createdAt)}
                 onToggle={(next) => void actions.setCompleted(task.id, next)}
                 onEdit={(text) => void actions.setText(task.id, text)}
                 onDelete={() => handleDelete(task)}
-                onReorderStart={canReorder ? (event) => startReorder(task.id, event) : undefined}
+                onPressStart={(event) => onPressStart(task.id, event)}
+                onSave={() => handleSave(task)}
+                onSaveAs={(text) => handleSave(task, text)}
               />
             ))}
           </ul>
@@ -187,6 +346,9 @@ export function TaskListView({
     </div>
   );
 }
+
+/** How long a row must be held still before it lifts for dragging. */
+const HOLD_MS = 380;
 
 function truncate(text: string, max = 32): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;

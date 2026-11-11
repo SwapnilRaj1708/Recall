@@ -119,14 +119,15 @@ export async function publishWidgetState(state: WidgetState): Promise<string | n
  * other surface goes through, for free.
  */
 export interface WidgetOp {
-  kind: 'capture' | 'setCompleted' | 'setText' | 'remove';
+  /** `save` moves the task to the Saved folder; with `text`, it is Save As. */
+  kind: 'capture' | 'setCompleted' | 'setText' | 'remove' | 'save';
   id: string;
   text?: string;
   completed?: boolean;
   at?: string;
 }
 
-const OP_KINDS = new Set<WidgetOp['kind']>(['capture', 'setCompleted', 'setText', 'remove']);
+const OP_KINDS = new Set<WidgetOp['kind']>(['capture', 'setCompleted', 'setText', 'remove', 'save']);
 
 /** Ignore anything malformed rather than letting it stall the whole drain. */
 export function parseWidgetOps(raw: string): WidgetOp[] {
@@ -198,6 +199,7 @@ export async function applyWidgetOps(
     setText: (id: string, text: string) => Promise<unknown>;
     setCompleted: (id: string, completed: boolean) => Promise<unknown>;
     remove: (id: string) => Promise<unknown>;
+    save: (id: string, text?: string) => Promise<unknown>;
   },
 ): Promise<number> {
   let applied = 0;
@@ -215,6 +217,9 @@ export async function applyWidgetOps(
           break;
         case 'remove':
           await engine.remove(op.id);
+          break;
+        case 'save':
+          await engine.save(op.id, op.text);
           break;
       }
       applied += 1;

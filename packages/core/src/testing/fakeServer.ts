@@ -1,5 +1,5 @@
 import { isNewer } from '../model/clock.js';
-import { withDerivedUpdatedAt } from '../model/merge.js';
+import { isSameVersion, mergeTask, withDerivedUpdatedAt } from '../model/merge.js';
 import type { Task } from '../model/types.js';
 import type { SettingsRemote, StampedSettings } from '../settings/store.js';
 import {
@@ -98,29 +98,9 @@ export class FakeServer {
       }
 
       const current = existing.task;
-      const textWins = isNewer(candidate.textUpdatedAt, current.textUpdatedAt);
-      const completedWins = isNewer(candidate.completedUpdatedAt, current.completedUpdatedAt);
-      const positionWins = isNewer(candidate.positionUpdatedAt, current.positionUpdatedAt);
-      const deletedWins = isNewer(candidate.deletedUpdatedAt, current.deletedUpdatedAt);
-
-      const merged = withDerivedUpdatedAt({
-        id: current.id,
-        text: textWins ? candidate.text : current.text,
-        textUpdatedAt: textWins ? candidate.textUpdatedAt : current.textUpdatedAt,
-        completed: completedWins ? candidate.completed : current.completed,
-        completedAt: completedWins ? candidate.completedAt : current.completedAt,
-        completedUpdatedAt: completedWins
-          ? candidate.completedUpdatedAt
-          : current.completedUpdatedAt,
-        position: positionWins ? candidate.position : current.position,
-        positionUpdatedAt: positionWins ? candidate.positionUpdatedAt : current.positionUpdatedAt,
-        deletedAt: deletedWins ? candidate.deletedAt : current.deletedAt,
-        deletedUpdatedAt: deletedWins ? candidate.deletedUpdatedAt : current.deletedUpdatedAt,
-        createdAt: current.createdAt < candidate.createdAt ? current.createdAt : candidate.createdAt,
-        updatedAt: current.updatedAt,
-      });
-
-      const changed = textWins || completedWins || positionWins || deletedWins;
+      // The same per-field rule as push_tasks and every client.
+      const merged = mergeTask(current, candidate);
+      const changed = !isSameVersion(current, merged);
       if (changed) {
         existing.task = merged;
         existing.serverUpdatedAt = this.nextStamp();

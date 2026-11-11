@@ -106,19 +106,39 @@ class WidgetActionActivity : AppCompatActivity() {
         // target opens this editor — so they are offered here, above the
         // field, one tap away instead of a trip into the app.
         val links = Links.find(existing.orEmpty())
-        val content = if (links.isEmpty()) {
-            pad(input)
-        } else {
-            pad(
-                LinearLayout(this).apply {
+        // Save and Save As on the right of the field: Save keeps the task as it
+        // is, Save As keeps whatever the field now says. Either way it leaves
+        // the list for the app's Saved folder.
+        val field = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(input, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
+            addView(
+                LinearLayout(this@WidgetActionActivity).apply {
                     orientation = LinearLayout.VERTICAL
-                    links.forEach { link ->
-                        addView(linkRow(link) { dialog?.dismiss() })
-                    }
-                    addView(input)
+                    addView(saveButton(R.string.widget_dialog_save) {
+                        WidgetActions.save(this@WidgetActionActivity, id, null)
+                        RecallWidgetProvider.refreshAll(this@WidgetActionActivity)
+                        dialog?.dismiss()
+                    })
+                    addView(saveButton(R.string.widget_dialog_save_as) {
+                        val text = input.text.toString().trim()
+                        WidgetActions.save(this@WidgetActionActivity, id, text.ifEmpty { null })
+                        RecallWidgetProvider.refreshAll(this@WidgetActionActivity)
+                        dialog?.dismiss()
+                    })
                 }
             )
         }
+        val content = pad(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                links.forEach { link ->
+                    addView(linkRow(link) { dialog?.dismiss() })
+                }
+                addView(field)
+            }
+        )
 
         dialog = AlertDialog.Builder(this)
             .setTitle(R.string.widget_dialog_edit_title)
@@ -189,6 +209,22 @@ class WidgetActionActivity : AppCompatActivity() {
                 openInBrowser(link.href)
                 onOpened()
             }
+        }
+
+    /** A compact text button for the column beside the edit field. */
+    private fun saveButton(label: Int, onClick: () -> Unit) =
+        android.widget.Button(this, null, android.R.attr.borderlessButtonStyle).apply {
+            setText(label)
+            isAllCaps = false
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
+            setTextColor(getColor(R.color.widget_accent))
+            minWidth = 0
+            minimumWidth = 0
+            minHeight = (36 * resources.displayMetrics.density).toInt()
+            minimumHeight = minHeight
+            val side = (10 * resources.displayMetrics.density).toInt()
+            setPadding(side, 0, side, 0)
+            setOnClickListener { onClick() }
         }
 
     private fun openInBrowser(href: String) {

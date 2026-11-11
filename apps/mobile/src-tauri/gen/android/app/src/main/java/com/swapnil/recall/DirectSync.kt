@@ -121,11 +121,13 @@ object DirectSync {
             .put("completed_at", JSONObject.NULL)
             .put("position", position)
             .put("deleted_at", JSONObject.NULL)
+            .put("saved_at", JSONObject.NULL)
             .put("created_at", now)
             .put("text_updated_at", now)
             .put("completed_updated_at", now)
             .put("position_updated_at", now)
             .put("deleted_updated_at", now)
+            .put("saved_updated_at", now)
             .put("updated_at", now)
     }
 

@@ -1,6 +1,6 @@
 // Model
 export type { Task, TaskField, SyncStatus, AuthState } from './model/types.js';
-export { TASK_FIELDS, FIELD_CLOCK, MAX_TEXT_LENGTH } from './model/types.js';
+export { TASK_FIELDS, FIELD_CLOCK, MAX_TEXT_LENGTH, NEVER } from './model/types.js';
 export { Clock, clock, isNewer, maxTimestamp } from './model/clock.js';
 export {
   positionBefore,
@@ -23,6 +23,8 @@ export {
   withCompleted,
   withPosition,
   withDeleted,
+  withSaved,
+  isSaved,
   isDeleted,
   isActive,
   isOpen,

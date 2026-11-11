@@ -53,11 +53,13 @@ export function createTask(
     completedAt: null,
     position,
     deletedAt: null,
+    savedAt: null,
     createdAt: now,
     textUpdatedAt: now,
     completedUpdatedAt: now,
     positionUpdatedAt: now,
     deletedUpdatedAt: now,
+    savedUpdatedAt: now,
     updatedAt: now,
   });
 }
@@ -97,9 +99,26 @@ export function withDeleted(task: Task, deleted: boolean, clock: Clock = default
   });
 }
 
+/**
+ * Saving moves a task out of the working list into the Saved folder. Its own
+ * clock, like every other field, so saving on one device and editing the text
+ * on another while apart keeps both.
+ */
+export function withSaved(task: Task, saved: boolean, clock: Clock = defaultClock): Task {
+  const now = clock.now();
+  return withDerivedUpdatedAt({
+    ...task,
+    savedAt: saved ? now : null,
+    savedUpdatedAt: now,
+  });
+}
+
 export const isDeleted = (task: Task): boolean => task.deletedAt !== null;
 export const isActive = (task: Task): boolean => task.deletedAt === null;
-export const isOpen = (task: Task): boolean => task.deletedAt === null && !task.completed;
+export const isSaved = (task: Task): boolean => task.deletedAt === null && task.savedAt !== null;
+/** In the working list: not deleted, not saved away, not done. */
+export const isOpen = (task: Task): boolean =>
+  task.deletedAt === null && task.savedAt === null && !task.completed;
 
 /** How long tombstones are retained before they can be purged. */
 export const TOMBSTONE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;

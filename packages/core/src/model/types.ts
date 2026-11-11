@@ -15,6 +15,11 @@ export interface Task {
   position: string;
   /** Tombstone. Non-null means deleted; kept so deletes replicate and stay undoable. */
   deletedAt: string | null;
+  /**
+   * Non-null means saved: moved out of the working list into the Saved folder,
+   * kept for later rather than done or deleted.
+   */
+  savedAt: string | null;
   createdAt: string;
 
   // Per-field logical clocks (ISO-8601 UTC, millisecond precision).
@@ -22,15 +27,16 @@ export interface Task {
   completedUpdatedAt: string;
   positionUpdatedAt: string;
   deletedUpdatedAt: string;
+  savedUpdatedAt: string;
 
   /** greatest() of the field clocks. Display and sort only — never used to merge. */
   updatedAt: string;
 }
 
 /** Fields a client may change. Used to type mutations and merge results. */
-export type TaskField = 'text' | 'completed' | 'position' | 'deleted';
+export type TaskField = 'text' | 'completed' | 'position' | 'deleted' | 'saved';
 
-export const TASK_FIELDS: readonly TaskField[] = ['text', 'completed', 'position', 'deleted'];
+export const TASK_FIELDS: readonly TaskField[] = ['text', 'completed', 'position', 'deleted', 'saved'];
 
 /** Maps each mutable field to the property holding its logical clock. */
 export const FIELD_CLOCK: Record<TaskField, keyof Task> = {
@@ -38,7 +44,15 @@ export const FIELD_CLOCK: Record<TaskField, keyof Task> = {
   completed: 'completedUpdatedAt',
   position: 'positionUpdatedAt',
   deleted: 'deletedUpdatedAt',
+  saved: 'savedUpdatedAt',
 };
+
+/**
+ * The clock a field has when nothing has ever set it: rows written before the
+ * Saved folder existed carry no saved clock at all, and any real choice must
+ * beat that absence.
+ */
+export const NEVER = '1970-01-01T00:00:00.000Z';
 
 export const MAX_TEXT_LENGTH = 2000;
 

@@ -7,9 +7,12 @@ import {
   isBlank,
   isOpen,
   isPurgeableTombstone,
+  isSaved,
+  normalizeText,
   withCompleted,
   withDeleted,
   withPosition,
+  withSaved,
   withText,
 } from '../model/task.js';
 import type { SyncStatus, Task } from '../model/types.js';
@@ -256,11 +259,18 @@ export class SyncEngine {
 
   getCompletedTasks(): Task[] {
     return [...this.tasks.values()]
-      .filter((t) => isActive(t) && t.completed)
+      .filter((t) => isActive(t) && t.completed && t.savedAt === null)
       .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
   }
 
   /** Tombstones still inside the retention window, newest first. */
+  /** The Saved folder, most recently saved first. */
+  getSavedTasks(): Task[] {
+    return [...this.tasks.values()]
+      .filter(isSaved)
+      .sort((a, b) => (b.savedAt ?? '').localeCompare(a.savedAt ?? ''));
+  }
+
   getDeletedTasks(): Task[] {
     return [...this.tasks.values()]
       .filter((t) => !isActive(t))
@@ -337,6 +347,29 @@ export class SyncEngine {
     const current = this.tasks.get(id);
     if (!current || !isActive(current)) return null;
     return this.applyLocal(withDeleted(current, true, this.clock));
+  }
+
+  /**
+   * Move a task into the Saved folder, optionally rewriting it on the way —
+   * "Save As". It leaves the working list but keeps everything it was.
+   */
+  async save(id: string, text?: string): Promise<Task | null> {
+    const current = this.tasks.get(id);
+    if (!current || !isActive(current)) return null;
+    let next = current;
+    if (text !== undefined && !isBlank(text) && normalizeText(text) !== current.text) {
+      next = withText(next, text, this.clock);
+    }
+    if (next.savedAt === null) next = withSaved(next, true, this.clock);
+    if (next === current) return null;
+    return this.applyLocal(next);
+  }
+
+  /** Back from the Saved folder into the working list. */
+  async unsave(id: string): Promise<Task | null> {
+    const current = this.tasks.get(id);
+    if (!current || current.savedAt === null) return null;
+    return this.applyLocal(withSaved(current, false, this.clock));
   }
 
   async restore(id: string): Promise<Task | null> {

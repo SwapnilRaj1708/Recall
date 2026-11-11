@@ -12,6 +12,7 @@ import {
 import { haptic } from '../motion.js';
 import { splitLinks } from '../links.js';
 import { Icon } from './Icon.js';
+import { Menu } from './feedback.js';
 import { Checkbox, IconButton, Kbd, cx } from './primitives.js';
 import styles from './task.module.css';
 
@@ -30,8 +31,18 @@ export interface TaskRowProps {
   onToggle: (completed: boolean) => void;
   onEdit: (text: string) => void;
   onDelete: () => void;
-  /** The handle was pressed: the list takes it from here. See listMotion. */
-  onReorderStart?: (event: ReactPointerEvent<HTMLElement>) => void;
+  /**
+   * A press began somewhere on the row. The list decides whether it becomes a
+   * hold-to-drag; see listMotion. Replaces the old drag handle, which took up
+   * the space the save button now uses.
+   */
+  onPressStart?: (event: ReactPointerEvent<HTMLElement>) => void;
+  /** Move to the Saved folder as it is. */
+  onSave?: () => void;
+  /** Move to the Saved folder with the text rewritten first. */
+  onSaveAs?: (text: string) => void;
+  /** In the Saved folder: move back to the working list. */
+  onUnsave?: () => void;
 }
 
 export function TaskRow({
@@ -39,15 +50,19 @@ export function TaskRow({
   text,
   completed,
   compact = false,
-  draggable = false,
   meta,
   unsynced = false,
   onToggle,
   onEdit,
   onDelete,
-  onReorderStart,
+  onPressStart,
+  onSave,
+  onSaveAs,
+  onUnsave,
 }: TaskRowProps) {
   const [editing, setEditing] = useState(false);
+  /** Editing for "Save As": Enter saves the rewritten task instead of only editing it. */
+  const [savingAs, setSavingAs] = useState(false);
   const [draft, setDraft] = useState(text);
   const inputRef = useRef<HTMLInputElement>(null);
   const segments = useMemo(() => splitLinks(text), [text]);
@@ -69,6 +84,7 @@ export function TaskRow({
   const commit = () => {
     const next = draft.trim();
     setEditing(false);
+    setSavingAs(false);
     if (next.length > 0 && next !== text) onEdit(next);
     else setDraft(text);
   };
@@ -76,16 +92,31 @@ export function TaskRow({
   const cancel = () => {
     setDraft(text);
     setEditing(false);
+    setSavingAs(false);
   };
 
   const onEditKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
+      if (savingAs) {
+        const next = draft.trim();
+        setEditing(false);
+        setSavingAs(false);
+        haptic();
+        onSaveAs?.(next.length > 0 ? next : text);
+        return;
+      }
       commit();
     } else if (event.key === 'Escape') {
       event.preventDefault();
       cancel();
     }
+  };
+
+  const startSaveAs = () => {
+    setDraft(text);
+    setSavingAs(true);
+    setEditing(true);
   };
 
   return (
@@ -95,14 +126,51 @@ export function TaskRow({
       // Announced, not just coloured: colour alone would leave this invisible
       // to a screen reader and to anyone who cannot distinguish the tone.
       aria-describedby={unsynced ? 'rc-unsynced-hint' : undefined}
+      onPointerDown={onPressStart}
     >
-      {draggable ? (
-        <span className={styles.handle} onPointerDown={onReorderStart} aria-hidden="true">
-          <Icon name="grip" size={14} />
+      {onSave ? (
+        // Where the drag handle used to be: dragging is now a hold anywhere
+        // on the row, which frees this space for saving.
+        <span className={styles.leading}>
+          <Menu
+            align="left"
+            items={[
+              {
+                label: 'Save',
+                icon: 'bookmark',
+                onSelect: () => {
+                  haptic();
+                  onSave();
+                },
+              },
+              { label: 'Save As…', icon: 'bookmark', onSelect: startSaveAs },
+            ]}
+            trigger={({ onClick, 'aria-expanded': expanded }) => (
+              <IconButton
+                icon="bookmark"
+                label={`Save "${text}"`}
+                aria-expanded={expanded}
+                onClick={onClick}
+                className={styles.saveButton}
+              />
+            )}
+          />
         </span>
       ) : null}
 
-      <Checkbox
+      {onUnsave ? (
+        <span className={styles.leading}>
+          <IconButton
+            icon="undo"
+            label={`Move "${text}" back to the list`}
+            title="Move back to the list"
+            onClick={onUnsave}
+            className={styles.saveButton}
+          />
+        </span>
+      ) : null}
+
+      {onUnsave ? null : <Checkbox
         checked={completed}
         // Completing is a commit, so it gets a tap of the motor on a phone,
         // in the same frame as the box filling in.
@@ -111,19 +179,20 @@ export function TaskRow({
           onToggle(next);
         }}
         label={completed ? `Mark "${text}" as not done` : `Mark "${text}" as done`}
-      />
+      />}
 
       {editing ? (
         <input
           ref={inputRef}
-          className={styles.editInput}
+          className={cx(styles.editInput, savingAs && styles.editInputSaving)}
+          placeholder={savingAs ? 'Rewrite it, then Enter to save' : undefined}
           value={draft}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onEditKeyDown}
           // Clicking away keeps the edit rather than discarding it; losing typed
           // text is exactly the failure this app exists to prevent.
           onBlur={commit}
-          aria-label="Edit task"
+          aria-label={savingAs ? 'Rewrite, then press Enter to save' : 'Edit task'}
         />
       ) : (
         /*
@@ -184,6 +253,7 @@ export function TaskRow({
         </span>
       ) : (
         <span className={styles.actions}>
+          {savingAs ? <span className={styles.savingHint}>Save</span> : null}
           <Kbd>Enter</Kbd>
         </span>
       )}

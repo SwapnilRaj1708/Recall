@@ -152,6 +152,7 @@ describe('replaying what the widget queued', () => {
     setText: vi.fn().mockResolvedValue(null),
     setCompleted: vi.fn().mockResolvedValue(null),
     remove: vi.fn().mockResolvedValue(null),
+    save: vi.fn().mockResolvedValue(null),
   });
 
   it('replays a capture under the id the widget minted', async () => {
@@ -184,6 +185,7 @@ describe('replaying what the widget queued', () => {
       setText: vi.fn(async () => void order.push('setText')),
       setCompleted: vi.fn(async () => void order.push('setCompleted')),
       remove: vi.fn(async () => void order.push('remove')),
+      save: vi.fn(async () => void order.push('save')),
     };
     await applyWidgetOps(
       [
@@ -208,6 +210,25 @@ describe('replaying what the widget queued', () => {
     );
     expect(engine.capture).toHaveBeenCalledWith('still captured', 'b');
     expect(applied).toBe(1);
+  });
+
+  it('replays Save and Save As from the widget into the Saved folder', async () => {
+    const engine = spyEngine();
+    await applyWidgetOps(
+      [
+        { kind: 'save', id: 'a' },
+        { kind: 'save', id: 'b', text: 'rewritten' },
+      ],
+      engine,
+    );
+    expect(engine.save).toHaveBeenCalledWith('a', undefined);
+    expect(engine.save).toHaveBeenCalledWith('b', 'rewritten');
+  });
+
+  it('reads a queued save', () => {
+    expect(parseWidgetOps(JSON.stringify([{ kind: 'save', id: 'a', text: 'x' }]))).toEqual([
+      { kind: 'save', id: 'a', text: 'x' },
+    ]);
   });
 
   it('ignores operations missing the field they need', async () => {

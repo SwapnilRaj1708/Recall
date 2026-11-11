@@ -29,6 +29,8 @@ object WidgetActions {
     const val OP_SET_COMPLETED = "setCompleted"
     const val OP_SET_TEXT = "setText"
     const val OP_REMOVE = "remove"
+    /** Into the Saved folder; with text, rewritten first ("Save As"). */
+    const val OP_SAVE = "save"
 
     /**
      * A cap, so a widget acted on repeatedly while the app never opens cannot
@@ -62,6 +64,10 @@ object WidgetActions {
 
     fun setText(context: Context, id: String, text: String) {
         append(context, Op(OP_SET_TEXT, id, text, null, now()))
+    }
+
+    fun save(context: Context, id: String, text: String?) {
+        append(context, Op(OP_SAVE, id, text, null, now()))
     }
 
     fun remove(context: Context, id: String) {
@@ -154,6 +160,8 @@ object WidgetActions {
                 OP_SET_COMPLETED -> replace(tasks, op.id) { it.copy(completed = op.completed ?: it.completed) }
                 OP_SET_TEXT -> replace(tasks, op.id) { it.copy(text = op.text ?: it.text) }
                 OP_REMOVE -> removed.add(op.id)
+                // Saved tasks live in the app's Saved folder, not on the widget.
+                OP_SAVE -> removed.add(op.id)
             }
         }
 
