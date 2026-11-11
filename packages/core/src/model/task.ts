@@ -115,10 +115,11 @@ export function withSaved(task: Task, saved: boolean, clock: Clock = defaultCloc
 
 export const isDeleted = (task: Task): boolean => task.deletedAt !== null;
 export const isActive = (task: Task): boolean => task.deletedAt === null;
-export const isSaved = (task: Task): boolean => task.deletedAt === null && task.savedAt !== null;
+// Loose checks on purpose: a task from before the Saved folder has no savedAt at all.
+export const isSaved = (task: Task): boolean => task.deletedAt === null && task.savedAt != null;
 /** In the working list: not deleted, not saved away, not done. */
 export const isOpen = (task: Task): boolean =>
-  task.deletedAt === null && task.savedAt === null && !task.completed;
+  task.deletedAt === null && task.savedAt == null && !task.completed;
 
 /** How long tombstones are retained before they can be purged. */
 export const TOMBSTONE_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;

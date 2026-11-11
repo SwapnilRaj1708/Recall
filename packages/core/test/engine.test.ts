@@ -978,3 +978,34 @@ describe('the Saved folder', () => {
     }
   });
 });
+
+describe('tasks stored before the Saved folder existed', () => {
+  it('stay in the list, rather than vanishing for lacking a saved field', async () => {
+    const storage = new MemoryStorage();
+    const legacy = { ...createLegacy('from an older version') };
+    await storage.saveTasks([legacy as never]);
+    const { engine } = makeClient(server, { storage });
+    await engine.start();
+    expect(textsOf(engine.getOpenTasks())).toEqual(['from an older version']);
+    expect(engine.getSavedTasks()).toHaveLength(0);
+  });
+});
+
+/** A task exactly as version 2 stored it: no savedAt, no savedUpdatedAt. */
+function createLegacy(text: string) {
+  const at = '2026-10-01T00:00:00.000Z';
+  return {
+    id: '11111111-1111-4111-8111-111111111111',
+    text,
+    completed: false,
+    completedAt: null,
+    position: 'a0',
+    deletedAt: null,
+    createdAt: at,
+    textUpdatedAt: at,
+    completedUpdatedAt: at,
+    positionUpdatedAt: at,
+    deletedUpdatedAt: at,
+    updatedAt: at,
+  };
+}

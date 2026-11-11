@@ -1,5 +1,18 @@
 import { isNewer, maxTimestamp } from './clock.js';
-import type { Task } from './types.js';
+import { NEVER, type Task } from './types.js';
+
+/**
+ * Bring a task stored by an older version up to the current shape.
+ *
+ * Tasks cached on a device, queued in its outbox, or returned by a server
+ * that predates a field simply do not have it. Treating a missing field as
+ * "something" rather than "never set" hid every older task once the Saved
+ * folder arrived, so every task passes through here on its way in.
+ */
+export function upgradeTask(task: Task): Task {
+  if (task.savedAt !== undefined && task.savedUpdatedAt !== undefined) return task;
+  return { ...task, savedAt: task.savedAt ?? null, savedUpdatedAt: task.savedUpdatedAt ?? NEVER };
+}
 
 /**
  * Merge two versions of the same task, field by field.
@@ -14,8 +27,10 @@ import type { Task } from './types.js';
  * the winning row from every push, so a client that loses a comparison learns
  * the truth on the next round trip rather than holding a divergent value.
  */
-export function mergeTask(local: Task | undefined, incoming: Task): Task {
-  if (!local) return withDerivedUpdatedAt(incoming);
+export function mergeTask(localRaw: Task | undefined, incomingRaw: Task): Task {
+  const incoming = upgradeTask(incomingRaw);
+  if (!localRaw) return withDerivedUpdatedAt(incoming);
+  const local = upgradeTask(localRaw);
   if (local.id !== incoming.id) {
     throw new Error(`Refusing to merge different tasks: ${local.id} vs ${incoming.id}`);
   }

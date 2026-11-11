@@ -259,7 +259,7 @@ export class SyncEngine {
 
   getCompletedTasks(): Task[] {
     return [...this.tasks.values()]
-      .filter((t) => isActive(t) && t.completed && t.savedAt === null)
+      .filter((t) => isActive(t) && t.completed && t.savedAt == null)
       .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
   }
 
@@ -360,7 +360,7 @@ export class SyncEngine {
     if (text !== undefined && !isBlank(text) && normalizeText(text) !== current.text) {
       next = withText(next, text, this.clock);
     }
-    if (next.savedAt === null) next = withSaved(next, true, this.clock);
+    if (next.savedAt == null) next = withSaved(next, true, this.clock);
     if (next === current) return null;
     return this.applyLocal(next);
   }
@@ -368,7 +368,7 @@ export class SyncEngine {
   /** Back from the Saved folder into the working list. */
   async unsave(id: string): Promise<Task | null> {
     const current = this.tasks.get(id);
-    if (!current || current.savedAt === null) return null;
+    if (!current || current.savedAt == null) return null;
     return this.applyLocal(withSaved(current, false, this.clock));
   }
 
